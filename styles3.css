@@ -33,12 +33,14 @@
   color: #DEC20B;
   position: absolute;
   font-family: MedievalSharp;
-  top: 50%;
-  left: 50%;
+  top: 10%;
+  left: 10%;
   transform: translate(-50%, -50%);
 }
 
 .cont {
+  position: relative;
+    display: inline-block;
   position: relative;
   text-align: top;
   color: white;
@@ -47,6 +49,7 @@
 
 
 .icons2 {
+  display: block;
   width: 318px;
   height: 65px;
   vertical-align: middle;
