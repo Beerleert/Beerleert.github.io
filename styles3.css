@@ -1,4 +1,5 @@
 
+
 .ll-tog {
   display: block;
   font-weight: bold;
@@ -9,6 +10,7 @@
   background: rgba(36, 39, 44, 0.64);
   border: 1px solid;
   cursor: pointer;
+  text-decoration: none;
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   border-radius: 7px;
   transition: all 0.25s ease-out;
@@ -18,8 +20,19 @@
   color: #B58B00;
 }
 
-.Bro {
+.bro:hover {
+  color: #B58B00;
+   transition: all 0.25s ease-out;
+}
+
+
+
+.bro {
+  text-decoration: none;
+   transition: all 0.25s ease-out;
+  color: #DEC20B;
   position: absolute;
+  font-family: MedievalSharp;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -27,8 +40,9 @@
 
 .cont {
   position: relative;
-  text-align: center;
+  text-align: top;
   color: white;
+
 }
 
 
