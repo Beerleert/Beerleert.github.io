@@ -154,6 +154,7 @@ h2 {
 }
 
 .duck {
+  transition: all 0.25s ease-out;
   font-size: 20px;
   color: #75b6e7;
   margin-right: 25px;
