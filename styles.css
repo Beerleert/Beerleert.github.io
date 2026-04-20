@@ -164,7 +164,7 @@ h2 {
 
 .duck:hover {
   font-size: 20px;
-
+  transition: all 0.25s ease-out;
   color: #278cda;
 }
 
