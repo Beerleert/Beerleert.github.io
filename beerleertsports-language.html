@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeerleertSports</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#11151b">
+<link rel="alternate" hreflang="en" href="beerleertsports-en.html">
+<link rel="alternate" hreflang="nl" href="beerleertsports-nl.html">
+<link rel="alternate" hreflang="ar" href="beerleertsports-ar.html">
+<style>
+:root{
+  --bg:#11151b;
+  --surface:#171d25;
+  --card:#1e2630;
+  --border:#2c3542;
+  --text:#eef1f5;
+  --muted:#7c8a9a;
+  --accent:#ff8c42;
+  --accent-glow:rgba(255,140,66,0.55);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:radial-gradient(circle at 50% -10%, var(--surface), var(--bg) 60%);
+  color:var(--text);
+  font-family:var(--font);
+  min-height:100vh;
+  display:flex;
+}
+
+.back-home{
+  position:fixed;top:18px;left:18px;
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--muted);
+  text-decoration:none;
+  transition:border-color .15s, color .15s, transform .15s;
+  z-index:10;
+}
+.back-home:hover,.back-home:focus-visible{border-color:var(--accent);color:var(--accent);transform:translateX(-2px);}
+.back-home svg{width:20px;height:20px;}
+
+.wrap{
+  margin:auto;
+  width:100%;
+  max-width:760px;
+  padding:72px 24px 56px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:40px;
+  text-align:center;
+}
+
+.mark{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.mark-icon{
+  height:84px;width:auto;display:block;
+  filter:drop-shadow(0 12px 26px var(--accent-glow));
+  animation:bob 3.4s ease-in-out infinite;
+}
+.brand{
+  font-size:clamp(28px,6vw,40px);
+  font-weight:800;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+}
+.brand span{color:var(--accent);}
+.tagline{
+  font-size:12px;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.tag-dot{color:var(--accent);font-weight:900;margin:0 7px;display:inline-block;transform:scale(1.35);}
+
+.globe{font-size:22px;opacity:.75;}
+
+.langs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  width:100%;
+}
+.lang-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:30px 16px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  color:var(--text);
+  transition:transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.lang-card:hover,.lang-card:focus-visible{
+  border-color:var(--accent);
+  background:var(--card);
+  transform:translateY(-4px);
+  box-shadow:0 14px 30px -14px var(--accent-glow);
+  outline:none;
+}
+.lang-card:active{transform:translateY(-1px) scale(.98);}
+.lang-name{font-size:19px;font-weight:700;}
+.lang-tag{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.lang-tag .tag-dot{margin:0 5px;}
+
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+@media (max-width:640px){
+  .langs{grid-template-columns:1fr;max-width:320px;}
+  .wrap{gap:34px;padding:64px 20px 48px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mark-icon{animation:none;}
+  .lang-card,.back-home{transition:none;}
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-home" title="Back to Beerleert" aria-label="Back to Beerleert">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 5 5 12 12 19"></polyline>
+  </svg>
+</a>
+
+<main class="wrap">
+  <div class="mark">
+    <img class="mark-icon" src="icon/B22R.png" alt="" onerror="this.style.display='none'">
+    <h1 class="brand">Beerleert<span>Sports</span></h1>
+    <p class="tagline">EAT <span class="tag-dot">•</span> SPORT <span class="tag-dot">•</span> SLEEP</p>
+  </div>
+
+  <div class="globe" aria-hidden="true">🌐</div>
+
+  <nav class="langs" aria-label="Choose your language">
+    <a class="lang-card" href="beerleertsports-en.html" hreflang="en" lang="en">
+      <span class="lang-name">English</span>
+      <span class="lang-tag">EAT <span class="tag-dot">•</span> SPORT <span class="tag-dot">•</span> SLEEP</span>
+    </a>
+    <a class="lang-card" href="beerleertsports-nl.html" hreflang="nl" lang="nl">
+      <span class="lang-name">Nederlands</span>
+      <span class="lang-tag">ETEN <span class="tag-dot">•</span> SPORT <span class="tag-dot">•</span> SLAPEN</span>
+    </a>
+    <a class="lang-card" href="beerleertsports-ar.html" hreflang="ar" lang="ar" dir="rtl">
+      <span class="lang-name">العربية</span>
+      <span class="lang-tag">كُل <span class="tag-dot">•</span> تمرّن <span class="tag-dot">•</span> نم</span>
+    </a>
+  </nav>
+</main>
+
+</body>
+</html>
