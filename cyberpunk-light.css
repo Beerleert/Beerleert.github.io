@@ -1,0 +1,44 @@
+/* BeerSports 1.8.0 - the Cyberpunk look by day (Settings > Appearance > Mode > Light).
+   Loaded after cyberpunk.css, and only while the look is Cyberpunk and the mode is Light (skin.js switches it).
+   The same console, in white steel under daylight: the same cut corners, hazard stripes and neon accent - only the
+   panels are light and the lettering dark. cyberpunk.css paints with the --cy-* variables, so most of it is the palette below. */
+html[data-skin="cyberpunk"][data-mode="light"]{
+  color-scheme:light;
+  --cy-void:#dde3ee; --cy-black:#e7ebf3; --cy-deck:#eef1f7; --cy-panel:#f8fafd; --cy-raised:#ffffff; --cy-high:#e8edf6;
+  --cy-line:#cbd3e2; --cy-line-hi:#98a8c2; --cy-steel:#55637b;
+  --cy-cyan:#0a8aa3; --cy-cyan-ink:#067489; --cy-magenta:#c4168b; --cy-violet:#6a3fd1; --cy-lime:#4f8a00;
+  --text:#0e1521; --muted:#46526a; --muted2:#4f5b72;
+  --teal-dim:rgba(10,138,163,.12);
+  --green:#0c8a4a; --red:#d0213a; --red-dim:rgba(208,33,58,.12); --yellow:#9a6700;
+  --flame-ink:#d9480f;
+  --pri-must:#e0153c; --pri-should:#d98a00; --pri-could:#0a8aa3;
+  --pri-must-ink:#c40f33; --pri-should-ink:#8f5c00; --pri-could-ink:#067489;
+  --pri-must-glow:rgba(224,21,60,.3); --pri-should-glow:rgba(217,138,0,.3); --pri-could-glow:rgba(10,138,163,.3);
+  --rh-ok:#0c8a4a; --rh-warn:#b87400; --rh-bad:#d0213a; --rh-info:#0a8aa3;
+}
+html[data-skin="cyberpunk"][data-mode="light"] body *{text-shadow:none}
+html[data-skin="cyberpunk"][data-mode="light"] body::before,
+html[data-skin="cyberpunk"][data-mode="light"] .sheet-page::before{
+  background:
+    radial-gradient(120% 55% at 50% -8%,var(--accent-dim),rgba(0,0,0,0) 70%),
+    linear-gradient(rgba(70,90,130,.06) 1px,rgba(0,0,0,0) 1px) 0 0/34px 34px,
+    linear-gradient(90deg,rgba(70,90,130,.06) 1px,rgba(0,0,0,0) 1px) 0 0/34px 34px}
+html[data-skin="cyberpunk"][data-mode="light"] :is(.topbar,.sheet-head){background:linear-gradient(180deg,#ffffff 0%,#f1f4fa 62%,#e4eaf3 100%);box-shadow:0 8px 20px rgba(30,45,80,.16)}
+html[data-skin="cyberpunk"][data-mode="light"] :is(.topbar,.sheet-head)::after{background:repeating-linear-gradient(-45deg,var(--accent) 0 6px,#e7ebf3 6px 12px)}
+html[data-skin="cyberpunk"][data-mode="light"] .tabbar{background:rgba(248,250,253,.96)}
+html[data-skin="cyberpunk"][data-mode="light"] .tools-picker{background:linear-gradient(180deg,#ffffff,#eef1f7)}
+html[data-skin="cyberpunk"][data-mode="light"] .subview-backdrop{background:rgba(30,40,60,.35)}
+html[data-skin="cyberpunk"][data-mode="light"] .back-to-top{background:rgba(255,255,255,.92)}
+html[data-skin="cyberpunk"][data-mode="light"] .card{background:linear-gradient(180deg,rgba(20,30,60,.02),rgba(0,0,0,0) 90px),var(--card);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 6px 18px rgba(30,45,80,.08)}
+html[data-skin="cyberpunk"][data-mode="light"] :is(input[type=text],input[type=number],input[type=password],input[type=date],input[type=time],input[type=search],textarea,select){background-color:#ffffff;color:var(--text)}
+html[data-skin="cyberpunk"][data-mode="light"] .modal-overlay{background:rgba(24,34,54,.55)}
+html[data-skin="cyberpunk"][data-mode="light"] :is(.modal-box,.lock-box){background:linear-gradient(180deg,#ffffff,var(--cy-deck) 140px)}
+html[data-skin="cyberpunk"][data-mode="light"] .dropdown-panel{background:linear-gradient(180deg,#ffffff,var(--cy-deck) 120px)}
+html[data-skin="cyberpunk"][data-mode="light"] :is(.progress-track,.timer-bar-track,.calc-macrobar,.dq-bar){background:#d3dae8}
+html[data-skin="cyberpunk"][data-mode="light"] .progress-track::after{background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 9px,rgba(255,255,255,.9) 9px 11px)}
+html[data-skin="cyberpunk"][data-mode="light"] .folio-leaf{background:linear-gradient(180deg,rgba(20,30,60,.02),rgba(0,0,0,0) 70%),#ffffff}
+html[data-skin="cyberpunk"][data-mode="light"] .dt-pri-btn.on::before{background:rgba(255,255,255,.55)}
+html[data-skin="cyberpunk"][data-mode="light"] .timer-gauge{background:linear-gradient(var(--ph-tint),var(--ph-tint)),var(--cy-panel)}
+html[data-skin="cyberpunk"][data-mode="light"] .checkin-tooltip{color:#eaeef6}
+html[data-skin="cyberpunk"][data-mode="light"] .tabbar{box-shadow:0 -8px 22px rgba(30,45,80,.14)}
+html[data-skin="cyberpunk"][data-mode="light"] :is(.modal-box,.dropdown-panel,.lock-box,.tools-picker){box-shadow:0 14px 40px rgba(30,45,80,.28)}

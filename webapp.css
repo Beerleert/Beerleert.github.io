@@ -1,0 +1,44 @@
+/* BeerSports web version - phone layout fixes and the notification prompt.
+ * Loaded after every other style sheet and shared by both looks (like motion.css), so it is never switched off. */
+
+/* ---- 0. Safe areas ---------------------------------------------------------------------------------------------- */
+/* This page does not ask for edge-to-edge (no viewport-fit=cover), so there is nothing to keep clear. Firefox for
+   Android still reports the height of the phone's navigation bar as a bottom "safe area", which made the tab bar
+   about 50px too tall. The padding in the other style sheets reads these two values instead of env(). Point them at
+   env(safe-area-inset-bottom, 0px) / env(safe-area-inset-top, 0px) again only if the page ever goes edge-to-edge. */
+:root { --sab: 0px; --sat: 0px; }
+
+/* ---- 1. The bottom tab bar on a phone ------------------------------------------------------------------------ */
+/* On a phone the page scrolls inside <body>, not the browser window. The window itself never moves, so Chrome's
+   address bar stays put and the fixed tab bar cannot come loose from the bottom edge when you scroll. (mobile-fix.js
+   makes window.scrollTo / scrollY follow the body, so the rest of the app does not notice.) */
+@media (max-width: 759.98px) {
+  html { height: 100%; overflow: hidden; }
+  body { height: 100%; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
+  html .tabbar { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* While the on-screen keyboard is up the bar steps aside (mobile-fix.js sets .kb-open from the size of the
+     visible area, so it is back the moment the keyboard is gone, however it was closed). */
+  html.kb-open .tabbar { transform: translate3d(0, 130%, 0); visibility: hidden; pointer-events: none; }
+}
+
+/* ---- 2. A pop-up holds the page behind it still with overflow, not position:fixed -------------------------------- */
+/* Where the page's scroll bar is taken away by the lock, keep its room so nothing shifts sideways. */
+html:has(body.body-scroll-locked) { scrollbar-gutter: stable; }
+
+/* ---- 3. The notification prompt (Agenda, To-Do) and its card in Settings ---------------------------------------- */
+.bs-notify-banner { margin: 0 0 14px; }
+.bs-notify-banner[hidden], #bsNotifyCard[hidden], #bsNotifyActions[hidden], #bsNotifyNote[hidden] { display: none; }
+.bs-notify-banner .bsn-card { margin: 0; }
+.bsn-text { margin: 0 0 12px; text-align: left; line-height: 1.45; }
+.bsn-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
+.bsn-row .btn { flex: 0 1 auto; }
+
+#bsNotifyStatus { font-weight: 700; line-height: 1.35; margin: 0 0 10px; }
+#bsNotifyStatus[data-state="granted"]::before { content: "\2713\00a0"; }
+#bsNotifyActions { margin: 0 0 10px; }
+#bsNotifyNote { margin: 12px 0 0; text-align: left; line-height: 1.45; white-space: pre-line; }
+
+/* ---- 4. A reminder that is due while the app is open: a card in the current look (it takes the look from .card) --- */
+.bsn-toast { position: fixed; z-index: 1100; top: 12px; left: 12px; right: 12px; max-width: 460px; margin: 0 auto; cursor: pointer; }
+.bsn-toast .card-title { margin-bottom: 6px; }
+.bsn-toast-text { margin: 0 0 10px; line-height: 1.4; }

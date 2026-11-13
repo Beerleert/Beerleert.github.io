@@ -1,0 +1,82 @@
+/* BeerSports 1.8.0 - the Medieval look by night (Settings > Appearance > Mode > Dark).
+   Loaded after medieval.css and features.css, and only while the look is Medieval and the mode is Dark (skin.js switches it).
+   Same layout, same frames, same wax and gilt - only what the vellum is made of changes: the sheets turn into dark vellum
+   by candle-light, the ink into cream. Most of it is the palette below (medieval.css paints with these variables). */
+html[data-skin="medieval"][data-mode="dark"]{
+  color-scheme:dark;
+  --vellum:#2e2217; --vellum-hi:#38291b; --vellum-lo:#261b11; --vellum-deep:#1c130b;
+  --ink:#f3e7c3; --ink-soft:#dccb9d; --ink-faint:#bba97c;
+  --border:#6e5731;
+  --gilt-mid:#d8b45a;
+  --lapis:#93b3f5; --verdigris:#62c4b9; --vert:#4f8f3f; --rubric:#e8836a;
+  --teal:#62c4b9; --teal-dim:rgba(98,196,185,.16);
+  --green:#86c872;
+  --red:#f08a7a; --red-dim:rgba(240,138,122,.18);
+  --yellow:#e6b94d;
+  --flame-ink:#ffa447;
+}
+/* the table: the same oak, but darker, with only a little candle-light left in the middle */
+html[data-skin="medieval"][data-mode="dark"]{background-color:#6f645a;background-blend-mode:multiply}
+html[data-skin="medieval"][data-mode="dark"] body::before{
+  background:radial-gradient(ellipse 90% 70% at 50% 38%,rgba(255,196,110,.06),rgba(0,0,0,.18) 55%,rgba(0,0,0,.72) 100%)}
+/* the sheets */
+html[data-skin="medieval"][data-mode="dark"] :is(.card,.modal-box,.dropdown-panel,.lock-box,.tools-picker){
+  background-color:#3a2b1c;background-image:url(img/parchment.jpg);background-blend-mode:multiply;color:var(--ink)}
+html[data-skin="medieval"][data-mode="dark"] ::selection{background:rgba(216,180,90,.45);color:#fff}
+/* things that sit on a sheet: pressed leather instead of cream plaques */
+html[data-skin="medieval"][data-mode="dark"] .btn-ghost{color:var(--ink);background:linear-gradient(180deg,#4d3a26,#33261a);
+  box-shadow:inset 0 1px 0 rgba(255,225,160,.22),inset 0 0 0 2px rgba(240,217,138,.26),0 3px 0 #120b05,0 6px 9px rgba(0,0,0,.45)}
+html[data-skin="medieval"][data-mode="dark"] .btn-danger{color:#ffa090;background:linear-gradient(180deg,#4f2c24,#35201a);
+  box-shadow:inset 0 1px 0 rgba(255,200,180,.18),inset 0 0 0 2px rgba(240,138,122,.25),0 3px 0 #120b05,0 6px 9px rgba(0,0,0,.4)}
+html[data-skin="medieval"][data-mode="dark"] .btn-danger:hover,
+html[data-skin="medieval"][data-mode="dark"] .btn-danger:disabled:hover{background:linear-gradient(180deg,#5c322a,#3d241d)}
+html[data-skin="medieval"][data-mode="dark"] :is(.card-title-icon-btn,.dropdown-panel-close,.modal-back-btn,.settings-icon-btn,.kb-arrow,.ring-adjust-btn),
+html[data-skin="medieval"][data-mode="dark"] :is(.card-title-icon-btn,.dropdown-panel-close,.modal-back-btn,.settings-icon-btn,.kb-arrow,.ring-adjust-btn):hover{
+  color:var(--ink);background:linear-gradient(180deg,#4d3a26,#33261a);
+  box-shadow:inset 0 1px 0 rgba(255,225,160,.2),0 2px 0 #120b05,0 4px 6px rgba(0,0,0,.4)}
+html[data-skin="medieval"][data-mode="dark"] :is(.chip,.seg-btn,.day-chip,.kb-tabbtn,.tools-tabbtn,.timer-tabbtn,.water-cup-btn):not(.active):not(.on){
+  color:var(--ink);background:linear-gradient(180deg,#4d3a26,#33261a);
+  box-shadow:inset 0 1px 0 rgba(255,225,160,.2),0 2px 0 #120b05,0 4px 5px rgba(0,0,0,.35)}
+html[data-skin="medieval"][data-mode="dark"] :is(input[type=text],input[type=number],input[type=password],input[type=date],input[type=time],textarea,select){
+  color:var(--ink);background-color:#1c140c;background-image:linear-gradient(180deg,#1a120b,#281c13 55%);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.6),0 1px 0 rgba(255,225,160,.14)}
+html[data-skin="medieval"][data-mode="dark"] select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3 5.5l5 5 5-5' fill='none' stroke='%23d8b45a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(180deg,#1a120b,#281c13 55%)}
+html[data-skin="medieval"][data-mode="dark"] select option{background:#2a1f15;color:var(--ink)}
+html[data-skin="medieval"][data-mode="dark"] :is(.wl-set-row input,.todo-check,.rem-check::before,.dq-day-mark){
+  background:linear-gradient(180deg,#1a120b,#2a1e14);box-shadow:inset 0 2px 3px rgba(0,0,0,.6),0 1px 0 rgba(255,225,160,.14)}
+html[data-skin="medieval"][data-mode="dark"] :is(.todo-item.done .todo-check,.rem-item.done .rem-check::before,.dq-day-list li.done .dq-day-mark){
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.3),rgba(255,255,255,0) 50%),var(--vert)}
+html[data-skin="medieval"][data-mode="dark"] :is(.todo-item,.food-item,.wl-hist-entry,.measure-type-item,.wb-block-item,.ex-lib-item,.note-item,.kb-card,.ex-card,.wl-stat-box,.hstat,.wl-se,.rem-item,.dq-day,.dt-time,.rh-summary){
+  box-shadow:inset 0 0 0 1px rgba(255,225,160,.10),inset 0 0 14px rgba(0,0,0,.28),0 2px 0 rgba(0,0,0,.5)}
+html[data-skin="medieval"][data-mode="dark"] :is(.rem-time,.dq-stat){
+  background:linear-gradient(180deg,#4d3a26,#33261a);box-shadow:inset 0 1px 0 rgba(255,225,160,.2),inset 0 0 0 2px rgba(240,217,138,.2),0 2px 0 #120b05,0 4px 6px rgba(0,0,0,.35)}
+html[data-skin="medieval"][data-mode="dark"] .lock-icon{background:radial-gradient(circle at 35% 30%,#5a4630,#2c2016 70%)}
+html[data-skin="medieval"][data-mode="dark"] .ds-tab:not(.active){background:linear-gradient(180deg,#34261a,#241911);color:var(--ink-soft);box-shadow:inset 0 1px 0 rgba(255,225,160,.12)}
+html[data-skin="medieval"][data-mode="dark"] .ds-tab.active{background:var(--vellum-hi);border-bottom-color:var(--vellum-hi);box-shadow:inset 0 3px 0 var(--gilt-mid),inset 0 1px 0 rgba(255,225,160,.2)}
+html[data-skin="medieval"][data-mode="dark"] .folio-leaf{background:linear-gradient(180deg,rgba(255,236,190,.06),rgba(255,236,190,.02)),var(--vellum-hi)}
+html[data-skin="medieval"][data-mode="dark"] .folio .acal-cell.sun.past .acal-num{color:#e39a82}
+html[data-skin="medieval"][data-mode="dark"] :is(.rem-warn,.dt-warn){background:linear-gradient(0deg,rgba(200,70,40,.18),rgba(200,70,40,.18)),var(--vellum-hi);box-shadow:inset 0 0 0 1px rgba(255,225,160,.12)}
+html[data-skin="medieval"][data-mode="dark"] :is(.wl-set-del,.wl-hist-del,.ex-del,.todo-del,.kb-card-del,.note-item-del,.food-item-del,.rem-del,.lock-error){color:#ff9a8a}
+html[data-skin="medieval"][data-mode="dark"] .checkin-chart-wrap text{fill:#dccb9d}
+html[data-skin="medieval"][data-mode="dark"] .checkin-chart-wrap line[stroke]:not(#ciHoverLine){stroke:rgba(216,180,90,.3)}
+html[data-skin="medieval"][data-mode="dark"] .progress-track::after{opacity:.9}
+html[data-skin="medieval"][data-mode="dark"] .custom-theme-panel,
+html[data-skin="medieval"][data-mode="dark"] .color-pick-item input[type=color]{background:var(--vellum-lo)}
+html[data-skin="medieval"][data-mode="dark"] .dt-pri-btn.on::before,
+html[data-skin="medieval"][data-mode="dark"] .dt-pri-none.on{background:rgba(255,255,255,.14)}
+/* gilt plaques keep dark lettering (the cream ink of this mode would vanish on the gold) */
+html[data-skin="medieval"][data-mode="dark"] :is(.sheet-back,.folio-turn,.back-to-top,.program-collapse-chevron){color:#2b1c0e}
+/* the pressed one is the gold one: cream plaque with dark ink by day, gilt with dark ink by night */
+html[data-skin="medieval"][data-mode="dark"] :is(.chip,.seg-btn,.day-chip,.kb-tabbtn,.tools-tabbtn,.timer-tabbtn).active{
+  color:#2b1c0e;background:linear-gradient(180deg,#ecd07a,#b98f33);text-shadow:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.22),0 2px 0 #120b05,0 4px 6px rgba(0,0,0,.4)}
+/* the season of the calendar (the coloured first letter of the month) and the importance of a task, in colours that read on dark vellum */
+html[data-skin="medieval"][data-mode="dark"] .folio{--season:#9bb8f5;--season-soft:rgba(155,184,245,.18)}
+html[data-skin="medieval"][data-mode="dark"] .folio[data-season="1"]{--season:#8fcf7a;--season-soft:rgba(143,207,122,.18)}
+html[data-skin="medieval"][data-mode="dark"] .folio[data-season="2"]{--season:#e6bd5a;--season-soft:rgba(230,189,90,.22)}
+html[data-skin="medieval"][data-mode="dark"] .folio[data-season="3"]{--season:#f0907a;--season-soft:rgba(240,144,122,.2)}
+html[data-skin="medieval"][data-mode="dark"]{
+  --pri-must:#e5534b; --pri-should:#e6b030; --pri-could:#5b9be0;
+  --pri-must-ink:#ff9a8a; --pri-should-ink:#f0c35c; --pri-could-ink:#8fc0f5;
+}

@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
+   BeerSports 1.4.0 - touch and motion.   Loaded last, so it wins over the other sheets.
+
+   1. Touch: no blue flash when something is tapped, no text selected by a long press or a double
+      tap. Fields (inputs, text areas, selects) stay editable and selectable.
+   2. One set of timings, so everything moves the same way: things that ARRIVE ease out slowly,
+      things that LEAVE are quicker, a press goes down fast and comes back slowly.
+   3. Pop-ups (modals, full pages) fade and rise in AND out, tabs slide in from the side
+      they sit on, sub-pages and collapsible cards open softly. Only opacity and transform are
+      animated, so it stays smooth on a phone.
+   With "reduce motion" on, the sliding and scaling go and only short fades stay.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. touch ─────────────────────────────────────────────────────────────────────────────── */
+*,*::before,*::after{-webkit-tap-highlight-color:transparent}
+html{-webkit-touch-callout:none}
+body{-webkit-user-select:none;user-select:none}
+input,textarea,select,[contenteditable="true"],[contenteditable=""]{-webkit-user-select:text;user-select:text}
+html,body{overflow-x:clip}                        /* a tab sliding in from the side must never make the page scroll sideways */
+
+/* ── 2. timings ───────────────────────────────────────────────────────────────────────────── */
+:root{
+  --ease-out:cubic-bezier(.22,.7,.2,1);           /* arrives: fast start, long soft landing */
+  --ease-soft:cubic-bezier(.4,.1,.2,1);           /* leaves, fades */
+  --t-fast:.18s;--t-med:.34s;--t-slow:.5s;
+}
+
+/* a press goes down quickly and comes back slowly, so a tap reads as one soft motion instead of a snap */
+.btn,.chip,.seg-btn,.day-chip,.kb-tabbtn,.tools-tabbtn,.timer-tabbtn,.tabbtn,.sheet-back,.ring-adjust-btn,.card-title-icon-btn,.settings-icon-btn,.folio-turn,.program-collapse-toggle{
+  transition:transform .42s var(--ease-out),box-shadow .42s var(--ease-out),filter .34s ease,
+             background-color .34s ease,color .32s ease,border-color .32s ease,opacity .32s ease;
+}
+.btn:active,.chip:active,.seg-btn:active,.day-chip:active,.kb-tabbtn:active,.tools-tabbtn:active,.timer-tabbtn:active,.sheet-back:active,.ring-adjust-btn:active,.card-title-icon-btn:active,.settings-icon-btn:active,.folio-turn:active{transition-duration:.12s}
+.tabbtn:active{transform:scale(.94);transition-duration:.12s}
+/* with the blue tap flash gone, every tappable thing still answers a touch: a soft press */
+.chip:active,.seg-btn:active,.day-chip:active,.kb-tabbtn:active,.tools-tabbtn:active,.timer-tabbtn:active{transform:translateY(1px) scale(.975);filter:brightness(.95)}
+.ex-lib-item,.wl-hist-entry,.checkin-hist-entry,.settings-group-title,.acal-cell,.dq-cell{transition:filter .34s ease,transform .42s var(--ease-out),background-color .34s ease,opacity .34s ease}
+.ex-lib-item:active,.wl-hist-entry:active,.checkin-hist-entry:active{filter:brightness(.94);transition-duration:.12s}
+.settings-group-title:active{opacity:.7;transition-duration:.12s}
+.tabbtn-icon{transition:transform .45s var(--ease-out),opacity .3s ease,filter .3s ease}
+.tabbtn.active .tabbtn-icon{transform:translateY(-2px) scale(1.08)}
+.tabbtn.active::before,.tabbtn.menu-open::before{animation:tabLit .55s var(--ease-out) backwards}   /* the lit gilt tab grows in */
+@keyframes tabLit{from{opacity:0;transform:scaleX(.15)}to{opacity:1;transform:none}}
+
+/* ── 3a. tabs and sub-pages ───────────────────────────────────────────────────────────────── */
+/* Every "arrive" animation fills BACKWARDS only: with "both" the element keeps a transform (even the identity one)
+   after it has finished, and that turns it into the container of everything position:fixed inside it - the More
+   drop-up was drawn at the bottom of the whole page, off screen. The slide is also put on what is IN the page, not
+   on the page, and not on the drop-up, so the drop-up can open in the same moment the tab comes in. */
+.page{animation:none}
+.page.active{animation:pageFade .3s var(--ease-soft) backwards}
+.page.active>:not(.tools-picker):not(.tools-subview){animation:pageIn .5s var(--ease-out) backwards}
+.page.active[data-enter="fwd"]>:not(.tools-picker):not(.tools-subview){animation-name:pageInFwd}
+.page.active[data-enter="back"]>:not(.tools-picker):not(.tools-subview){animation-name:pageInBack}
+.page.active>:nth-child(n+2):not(.tools-picker):not(.tools-subview){animation-delay:.04s}
+.page.active>:nth-child(n+3):not(.tools-picker):not(.tools-subview){animation-delay:.08s}
+.page.active>:nth-child(n+4):not(.tools-picker):not(.tools-subview){animation-delay:.12s}
+@keyframes pageFade{from{opacity:0}to{opacity:1}}
+@keyframes pageIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes pageInFwd{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes pageInBack{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+
+.tools-subview.active,.tool-pane.active,.timer-subview.active,.ds-pane.active{animation:subIn .4s var(--ease-out) backwards}
+@keyframes subIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.folio-leaf.turn-next{animation-duration:.48s;animation-timing-function:var(--ease-out)}
+.folio-leaf.turn-prev{animation-duration:.48s;animation-timing-function:var(--ease-out)}
+
+/* ── 3b. pop-ups: they arrive with a fade and a rise ... ──────────────────────────────────── */
+.modal-overlay.open{animation:ovIn var(--t-med) var(--ease-soft) backwards;-webkit-backdrop-filter:none;backdrop-filter:none}
+.modal-overlay.open .modal-box{animation:boxIn .48s var(--ease-out) backwards}
+.sheet-page.open{animation:sheetUp .5s var(--ease-out) backwards}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+@keyframes boxIn{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(44px)}to{opacity:1;transform:none}}
+
+/* ... and leave the same way, a little quicker. app-en.js puts .closing on a pop-up for the moment between the
+   class .open going and the element disappearing. */
+.modal-overlay.closing{display:flex;pointer-events:none;animation:ovOut .28s var(--ease-soft) both}
+.modal-overlay.closing .modal-box{animation:boxOut .28s var(--ease-soft) both}
+.sheet-page.closing{display:flex;pointer-events:none;animation:sheetDown .3s var(--ease-soft) both}
+@keyframes ovOut{from{opacity:1}to{opacity:0}}
+@keyframes boxOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(18px) scale(.975)}}
+@keyframes sheetDown{from{opacity:1;transform:none}to{opacity:0;transform:translateY(34px)}}
+
+/* ── 3c. the drop-up menus above the tab bar (More): the items come up one after the other ─ */
+.subview-backdrop{transition:opacity var(--t-med) var(--ease-soft)}
+@media (max-width:759px){
+  .tools-picker.wide-card{
+    transform:translateY(22px) scale(.96);transform-origin:50% 100%;visibility:hidden;
+    transition:opacity var(--t-med) var(--ease-out),transform .42s var(--ease-out),visibility 0s linear .42s;
+  }
+  .tools-picker.wide-card.open{
+    transform:none;visibility:visible;
+    transition:opacity var(--t-med) var(--ease-out),transform .42s var(--ease-out),visibility 0s;
+  }
+  .tools-picker.wide-card>button{opacity:0;transform:translateY(12px);transition:opacity .34s var(--ease-out),transform .42s var(--ease-out),background-color .3s ease,color .3s ease}
+  .tools-picker.wide-card.open>button{opacity:1;transform:none}
+  .tools-picker.wide-card.open>button:active{transform:scale(.97);transition-duration:.12s}
+  /* The first tap on More also brings the page itself on screen in the same moment, and a transition does not run for
+     something that was not on screen a moment ago - so the menu comes up with keyframes, which always run. */
+  .tools-picker.wide-card.open{animation:pickerIn .44s var(--ease-out) backwards}
+  .tools-picker.wide-card.open>button{animation:pickerItem .44s var(--ease-out) backwards}
+  .tools-picker.wide-card.open>button:nth-child(1){animation-delay:.05s}
+  .tools-picker.wide-card.open>button:nth-child(2){animation-delay:.1s}
+  .tools-picker.wide-card.open>button:nth-child(3){animation-delay:.15s}
+  .tools-picker.wide-card.open>button:nth-child(4){animation-delay:.2s}
+  @keyframes pickerIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes pickerItem{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+}
+
+/* ── 3d. cards that open and close (Goals, Daily To-Do, Workout Program) ────────── */
+.program-collapsible .program-collapse-body{animation:none}                         /* app-en.js animates the height */
+.program-collapsible.closing .program-collapse-body{display:block}                  /* stays while it folds away */
+.program-collapse-chevron{transition:transform .45s var(--ease-out),color .3s ease}
+.settings-group-body{transition:max-height .42s var(--ease-out)}
+.settings-group-title .sg-chevron{transition:transform .4s var(--ease-out)}
+.settings-group.sg-open .settings-group-body-inner{animation:subIn .45s var(--ease-out) backwards}
+
+/* ── 3e. Workout (1.5.2): pressing Start workout, and every change of what is happening now ───────────────────
+   The Voice Coach changes look by showing and hiding parts (data-lt on #timerView-lifting, set by ltRender in app-en.js), and that
+   used to be a snap: you pressed Start and the whole card was different at once. Now what comes on screen arrives slowly: the
+   panel fades and rises, then its parts follow one after the other (the name, the set, the countdown, the bar) and the buttons
+   last - about a second in all after Start workout, a calmer half second for each later change (warm-up, lifting, rest, done).
+   Only opacity and transform move, and - as everywhere in this file - an arrive animation fills BACKWARDS only.
+   Three copies of one set of keyframes (A, B, C) are used on purpose: a different animation-name restarts an animation, so two
+   neighbouring phases always get different ones (get ready A, warm-up B, lifting and holding C, rest A, done B).
+   To make Start workout slower or faster, change --vc-dur / --vc-step of the get-ready line, and .9s of vcPanelIn below it. */
+@keyframes vcPanelIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes vcPartA{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes vcPartB{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes vcPartC{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#timerView-lifting{--vc-anim:vcPartA;--vc-step:.04s;--vc-dur:.5s}
+#timerView-lifting[data-lt="getready"]{--vc-anim:vcPartA;--vc-step:.08s;--vc-dur:.7s}   /* Start workout: the slow one */
+#timerView-lifting[data-lt="warmup"]{--vc-anim:vcPartB}
+#timerView-lifting[data-lt="lift"],#timerView-lifting[data-lt="hold"]{--vc-anim:vcPartC}
+#timerView-lifting[data-lt="rest"]{--vc-anim:vcPartA}
+#timerView-lifting[data-lt="done"]{--vc-anim:vcPartB}
+#timerView-lifting .vc-now>:nth-child(1){--i:0}
+#timerView-lifting .vc-now>:nth-child(2){--i:1}
+#timerView-lifting .vc-now>:nth-child(3){--i:2}
+#timerView-lifting .vc-now>:nth-child(4){--i:3}
+#timerView-lifting .vc-now>:nth-child(5){--i:4}
+#timerView-lifting .vc-actions>*{--i:5}
+#timerView-lifting:not([data-lt="idle"]) .vc-now>*,
+#timerView-lifting:not([data-lt="idle"]) .vc-actions>*{
+  animation:var(--vc-anim) var(--vc-dur) var(--ease-out) backwards;
+  animation-delay:calc(var(--i) * var(--vc-step));
+}
+#timerView-lifting[data-lt="getready"] .vc-now{animation:vcPanelIn .9s var(--ease-out) backwards}
+
+/* ── reduce motion: no sliding, no scaling - short fades only ─────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  @keyframes fadeOnly{from{opacity:0}to{opacity:1}}
+  .page.active,.page.active[data-enter]{animation:fadeOnly .22s ease backwards}
+  .page.active>:not(.tools-picker):not(.tools-subview),.page.active[data-enter]>:not(.tools-picker):not(.tools-subview){animation:none}
+  .tools-subview.active,.tool-pane.active,.timer-subview.active,.ds-pane.active{animation:fadeOnly .2s ease backwards}
+  .modal-overlay.open .modal-box{animation:fadeOnly .22s ease backwards}
+  .sheet-page.open{animation:fadeOnly .22s ease backwards}
+  .modal-overlay.closing .modal-box{animation:ovOut .2s ease both}
+  .sheet-page.closing{animation:ovOut .2s ease both}
+  .tabbtn.active::before,.tabbtn.menu-open::before{animation:none}
+  .tabbtn.active .tabbtn-icon{transform:none}
+  .tools-picker.wide-card,.tools-picker.wide-card.open,.tools-picker.wide-card>button,.tools-picker.wide-card.open>button{transform:none}
+  .tools-picker.wide-card.open,.tools-picker.wide-card.open>button{animation:fadeOnly .2s ease backwards}
+  .btn:active,.chip:active,.tabbtn:active{transform:none}
+  /* Workout: only a short fade, no rising and no staggering */
+  #timerView-lifting[data-lt="getready"] .vc-now,
+  #timerView-lifting:not([data-lt="idle"]) .vc-now>*,
+  #timerView-lifting:not([data-lt="idle"]) .vc-actions>*{animation:fadeOnly .22s ease backwards;animation-delay:0s}
+}

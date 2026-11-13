@@ -1,0 +1,58 @@
+/* Beerleert - film noir. Loaded after styles.css on the Beerleert pages (the BeerSports app does not use it).
+   To go back to the old look, delete the <link href="noir.css"> line from the pages. */
+:root{
+  --bg:#08080a; --surface:#121214; --card:#19191c; --border:#3a3a40;
+  --text:#ebe6da; --muted:#9a968c;
+  --accent:#35c46a; --accent-dim:rgba(53,196,106,.15); --accent-glow:rgba(53,196,106,.5);
+  --font:"Courier New",Courier,"Liberation Mono",monospace;
+  --serif:"Bodoni 72",Didot,"Playfair Display",Georgia,"Times New Roman",serif;
+}
+html{background:#030303}
+html,body{overflow-x:clip}
+body{
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -4%,rgba(255,255,255,.2),transparent 72%),
+    repeating-linear-gradient(168deg,rgba(255,255,255,.05) 0 22px,transparent 22px 58px),
+    var(--bg);
+  background-attachment:fixed;
+  letter-spacing:.03em;
+}
+/* film grain and a dark vignette over everything; taps and clicks go straight through */
+body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none}
+body::before{z-index:60;opacity:.3;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::after{z-index:59;background:radial-gradient(ellipse at 50% 45%,transparent 40%,rgba(0,0,0,.8) 100%)}
+
+/* type: serif capitals for titles, typewriter for the rest */
+.bob h2,.page-head h1,.category-card h3,.section h2{font-family:var(--serif)}
+/* sized from the screen width so the 9 letters of BEERLEERT always fit, even in a wide serif font */
+.bob h2{font-size:clamp(26px,calc((100vw - 40px) / 10),92px);font-weight:900;letter-spacing:.1em;overflow-wrap:anywhere}
+.bob h2:first-child{text-shadow:4px 4px 0 #000}
+.hero-tagline{font-family:var(--serif);font-style:italic;font-size:16px}
+.page-head h1{letter-spacing:.12em;overflow-wrap:anywhere;border-bottom:3px double var(--border);padding-bottom:10px}
+.section h2{letter-spacing:.3em}
+
+/* hard edges, black offset shadows, no soft rounded corners */
+.category-card,.resource-card,.tabs a,.chip-link,.to-top{border-radius:0;box-shadow:5px 5px 0 #000}
+.category-card{border-width:2px;border-top:4px solid var(--text)}
+.chip-link,.tabs a{background:transparent;text-transform:uppercase;letter-spacing:.14em;font-size:11.5px}
+.category-card:hover,.resource-card:hover,.chip-link:hover,.tabs a:hover,.to-top:hover{
+  border-color:var(--accent);color:var(--text);background:#000;box-shadow:5px 5px 0 var(--accent)}
+.to-top{background:#000;border:2px solid var(--text);color:var(--text)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* pictures in black and white; colour comes back on hover or focus */
+.category-banner,.resource-card img,.chip-link img,.tabs a img{filter:grayscale(1) contrast(1.25)}
+.category-banner{filter:grayscale(1) contrast(1.3) brightness(.8)}
+.resource-card img{border-radius:0;border:1px solid var(--border)}
+.category-card--link:hover .category-banner,.category-card--link:focus-visible .category-banner,
+.resource-card:hover img,.resource-card:focus-visible img{filter:none}
+/* stand-in for a picture that is missing: the first letter, stamped */
+.mono{display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--border);background:#000;
+  color:var(--text);font:900 22px/1 var(--serif)}
+.embed-fallback{margin-top:10px;font-size:12px;text-align:center}
+.embed-fallback a{color:var(--muted);text-decoration:underline}
+.embed-fallback a:hover{color:var(--text)}
+/* long names without spaces (ManyProphetsOneMessage) wrap inside the card instead of running off the screen */
+.resource-card{min-width:0}
+.resource-card span{min-width:0;overflow-wrap:anywhere}

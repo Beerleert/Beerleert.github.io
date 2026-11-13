@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), bluetooth=()">
+<!-- Baseline CSP: script-src has NO 'unsafe-inline' — the app's JS is loaded from an
+     external file (app-*.js), not an inline <script> block, and every interactive element
+     uses addEventListener instead of onclick="" / oninput="" attributes. So injected inline
+     <script> or onclick="" from an XSS attempt genuinely won't execute. style-src still allows
+     'unsafe-inline' because this file uses inline style="" attributes for dynamic theming/
+     positioning (colors, photo crop position, etc.) — removing that would mean rewriting those
+     to toggle CSS classes/custom properties instead, a separate and much larger change.
+     worker-src/manifest-src are 'self' (not 'none') so the PWA install (manifest-en.json) and
+     offline support (sw.js, registered from app-en.js) can load — both still same-origin only,
+     nothing external. Keep this HTML file, its app-*.js, styles.css, manifest-en.json, sw.js,
+     and the icon-*.png files together in the same folder — the app won't load correctly, and
+     won't be installable, if they're separated. If this is ever hosted online, also set an
+     equivalent (or stricter) policy as a real HTTP response header, since some directives (e.g.
+     frame-ancestors) only take effect from a header, not this meta tag. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests;">
+<link rel="manifest" href="manifest-en.json">
+<meta name="theme-color" content="#24160b">
+<!-- Installable PWA support: real icon files (used by the manifest, the
+     install prompt, and the home-screen icon) plus the platform-specific
+     tags each OS looks for when the app is added to a home screen or
+     installed as a desktop app. -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BeerSports">
+<title>BeerSports</title>
+<link rel="stylesheet" href="stylese.css">
+<link rel="stylesheet" href="calculator.css">
+<!-- The two looks. skin.js (right below) switches the style sheets of the look that is not worn off before the first paint:
+     medieval = medieval.css + features.css, cyberpunk = skin-structure.css (the layout of the first, generated from it) + cyberpunk.css. -->
+<link rel="stylesheet" href="medieval.css" data-skin-css="medieval">
+<link rel="stylesheet" href="features.css" data-skin-css="medieval">
+<link rel="stylesheet" href="skin-structure.css" data-skin-css="cyberpunk">
+<link rel="stylesheet" href="cyberpunk.css" data-skin-css="cyberpunk">
+<!-- 1.8.0: light and dark for both looks. Each of these two is only on while its look is worn in that mode (skin.js: data-mode-css). -->
+<link rel="stylesheet" href="medieval-dark.css" data-skin-css="medieval" data-mode-css="dark">
+<link rel="stylesheet" href="cyberpunk-light.css" data-skin-css="cyberpunk" data-mode-css="light">
+<link rel="stylesheet" href="motion.css">
+<link rel="stylesheet" href="webapp.css">
+<script src="skin.js"></script>
+</head>
+<body>
+
+
+<!-- LOCK SCREEN -->
+<div class="lock-overlay" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title" data-i18n="lock_title">Locked</div>
+    <div class="lock-sub" data-i18n="lock_sub">Enter your password to unlock BeerSports.</div>
+    <div id="lockKeyFileRow" style="display:none;margin-bottom:10px;">
+      <input type="file" accept=".json,application/json" id="lockKeyFileInput" style="display:none;" data-h="h236">
+      <button type="button" class="btn btn-ghost btn-sm" data-h="h235" data-i18n="btn_selectkeyfile">📎 Select Key File</button>
+      <div class="keyfile-name empty" id="lockKeyFileName" data-i18n="lbl_nofileselected">No file selected</div>
+    </div>
+    <input type="password" id="lockPasswordInput" placeholder="Password" data-i18n-ph="lbl_importpassword" data-h="h1">
+    <div class="lock-error" id="lockError" data-i18n="lock_error">Incorrect password. Try again.</div>
+    <button class="btn btn-block" data-h="h2" data-i18n="lock_unlock_btn">Unlock</button>
+    <button class="lock-reset-link" data-h="h3" data-i18n="lock_forgot">Forgot password? Erase all app data</button>
+  </div>
+</div>
+
+<!-- SET/CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal-box">
+    <div class="modal-title" id="pwModalTitle" data-i18n="modal_setpw_title">Set Password</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_newpassword">New Password</label>
+      <input type="password" id="pwNew1" placeholder="At least 12 characters" data-i18n-ph="ph_newpassword_hint">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_confirmpassword">Confirm Password</label>
+      <input type="password" id="pwNew2">
+    </div>
+    <div class="modal-field">
+      <label class="check-row">
+        <input type="checkbox" id="pwUseKeyFile">
+        <span class="check-row-label" data-i18n="lbl_usekeyfile">Also require a key file to unlock (optional, extra protection)</span>
+      </label>
+      <div class="check-hint" data-i18n="hint_keyfile">You'll download a small key file below. Store it somewhere safe and separate from this device — you'll need both it and your password to unlock next time.</div>
+    </div>
+    <div class="lock-error" id="pwError"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h4" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h5" data-i18n="btn_save">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="topbar">
+  <div class="topbar-brand-wrap">
+    <div class="brand">Beer<span>Sports</span></div>
+    <div class="tagline" data-i18n="tagline_text">SPORT <span class="tag-dot">•</span> EAT <span class="tag-dot">•</span> SLEEP</div>
+  </div>
+  <div class="topbar-right">
+    <span id="sessionLockIndicator" class="session-lock-badge" style="display:none;" data-i18n-title="tt_unlocked" title="Unlocked — your data is decrypted in memory until auto-lock or you lock it manually">🔓</span>
+    <button type="button" class="settings-icon-btn topbar-more-btn" data-h="h6" data-i18n-title="tab_tools" data-i18n-aria="tab_tools" aria-label="Menu" title="Menu">🧰</button>
+  </div>
+</div>
+
+<nav class="tabbar" aria-label="Primary">
+  <button class="tabbtn active" data-tab="agenda" data-h="h8"><span class="tabbtn-icon" aria-hidden="true">📅</span><span data-i18n="tab_agenda">Agenda</span></button>
+  <button class="tabbtn" data-tab="todo" data-h="h9"><span class="tabbtn-icon" aria-hidden="true">🛡️</span><span data-i18n="tab_todo">To-Do</span></button>
+  <button class="tabbtn" data-tab="timers" data-h="h10"><span class="tabbtn-icon" aria-hidden="true">🏋️</span><span data-i18n="tab_timers">Workout</span></button>
+  <button class="tabbtn" data-tab="tools" data-h="h11" aria-haspopup="true" aria-expanded="false"><span class="tabbtn-icon" aria-hidden="true">🧰</span><span class="tabbtn-label-row"><span data-i18n="tab_tools">Menu</span><span class="tabbtn-caret" aria-hidden="true">▴</span></span></button>
+</nav>
+
+<!-- ══════════════ TOOLS (Profile + Fitness Tools) ══════════════ -->
+<div class="page" id="page-tools">
+
+  <div class="tools-picker wide-card">
+    <button class="tools-tabbtn active" data-view="profile" data-h="h12" data-i18n="tab_profile_btn">👤 Profile</button>
+    <button class="tools-tabbtn" data-view="fitness" data-h="h13" data-i18n="tab_fitness_btn">🧮 Tools</button>
+    <button class="tools-tabbtn" data-view="website" data-h="h15"><img src="img/bear.png" alt="" class="tools-tabbtn-icon"><span data-i18n="tab_website_btn">Beerleert</span></button>
+  </div>
+
+  <div class="tools-subview active" id="toolsView-profile">
+
+  <div class="card wide-card profile-combo-card">
+    <div class="profile-hero">
+    <div class="profile-top">
+      <div class="icon-dropdown-wrap">
+        <button type="button" class="settings-icon-btn" id="bannerEditToggleBtn" data-h="h17" data-i18n-aria="tt_editprofile" aria-label="Settings" data-i18n-title="tt_editprofile" title="Settings" aria-haspopup="dialog">⚙</button>
+      </div>
+    </div>
+
+      <div class="profile-hero-main">
+
+      <!-- 1% BETTER EVERY DAY: the challenge bar lives here now; starting, editing and resetting the challenge is in Settings -->
+      <div class="profile-combo-col streak-card" id="streakCard">
+        <div class="card-title" data-i18n="card_streak">1% Better Every Day</div>
+        <div class="progress-track" id="progTrack" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-labelledby="progLabel"><div class="progress-fill empty" id="progFill" style="width:0%"><i class="bar-stud" aria-hidden="true"></i></div></div>
+        <div class="progress-caption"><span id="progLabel">0 / 84 days</span><span id="progPct">0%</span></div>
+        <div class="streak-hint" id="streakHint"></div>
+      </div>
+
+      <div class="profile-combo-col program-collapsible" id="goalsCard">
+        <button type="button" class="program-collapse-toggle" data-h="h252" aria-expanded="false" aria-controls="goalsCollapseBody">
+          <span class="program-collapse-label" data-i18n="card_goals">My Goals, Insha'Allah</span>
+          <small id="pgoalCount"></small>
+          <span class="program-collapse-chevron" id="goalsChevron">▾</span>
+        </button>
+        <div class="program-collapse-body" id="goalsCollapseBody">
+        <div id="profileGoalsList"></div>
+        <div class="add-row">
+          <input type="text" id="profileGoalInput" placeholder="Add a goal..." data-i18n-ph="ph_addgoal" data-h="h47">
+          <button class="btn btn-sm" data-h="h48" data-i18n="btn_add">Add</button>
+        </div>
+        </div>
+      </div>
+
+      </div><!-- /profile-hero-main -->
+
+    </div>
+  </div>
+
+  </div><!-- /toolsView-profile -->
+
+  <div class="tools-subview" id="toolsView-fitness">
+    <div class="chip-row tool-seg" role="tablist">
+      <button type="button" class="chip active" role="tab" aria-selected="true" data-pane="calc" data-h="h259" data-i18n="tab_calculator">🧮 Calculator</button>
+      <button type="button" class="chip" role="tab" aria-selected="false" data-pane="countdown" data-h="h260" data-i18n="tab_countdown">⏱ Countdown</button>
+      <button type="button" class="chip" role="tab" aria-selected="false" data-pane="circuit" data-h="h261" data-i18n="tab_circuit">🔁 Circuit</button>
+    </div>
+    <div class="tool-pane active" id="toolPane-calc">
+
+    <div class="card wide-card calc-card" id="calcAboutCard">
+      <div class="card-title" data-i18n="card_calorie">🧮 Calorie, Protein &amp; Meal Calculator</div>
+      <div class="calc-intro" data-i18n="calc_intro">Fill in what you know. You get your calories, a protein number you can really afford, and a day of food in grams.</div>
+      <div class="field-grid">
+        <div class="fg-item"><label class="f-label" for="calcAge" data-i18n="lbl_age">Age</label><input type="number" inputmode="numeric" id="calcAge" placeholder="e.g. 28" data-h="h58"></div>
+        <div class="fg-item">
+          <label class="f-label" for="calcGender" data-i18n="lbl_gender">Gender</label>
+          <select id="calcGender" data-h="h59">
+            <option value="male" data-i18n="opt_male">Male</option>
+            <option value="female" data-i18n="opt_female">Female</option>
+          </select>
+        </div>
+        <div class="fg-item"><label class="f-label" for="calcHeight" data-i18n="lbl_height">Height (cm)</label><input type="number" inputmode="decimal" id="calcHeight" placeholder="e.g. 178" data-h="h60"></div>
+        <div class="fg-item"><label class="f-label" for="calcWeight" data-i18n="lbl_weightkg">Weight (kg)</label><input type="number" inputmode="decimal" id="calcWeight" placeholder="e.g. 82" data-h="h61"></div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" for="calcActivity" data-i18n="lbl_activitylevel">Activity Level</label>
+        <select id="calcActivity" data-h="h62">
+          <option value="sedentary" data-i18n="opt_sedentary">Sedentary (little/no exercise)</option>
+          <option value="light" data-i18n="opt_light">Light (1–3 days/week)</option>
+          <option value="moderate" data-i18n="opt_moderate">Moderate (3–5 days/week)</option>
+          <option value="active" data-i18n="opt_active">Active (6–7 days/week)</option>
+          <option value="veryactive" data-i18n="opt_veryactive">Very active (hard training + physical job)</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" for="calcGoal" data-i18n="lbl_goal">Goal</label>
+        <select id="calcGoal" data-h="h63">
+          <option value="maintain" data-i18n="opt_maintain">Maintain weight</option>
+          <option value="lose" data-i18n="opt_lose">Lose fat</option>
+          <option value="build" data-i18n="opt_build">Build muscle</option>
+        </select>
+      </div>
+      <div class="modal-field" id="calcRateField" style="display:none;">
+        <label class="f-label" data-i18n="lbl_targetrate">Target Rate</label>
+        <div class="chip-row calc-presets" id="calcPresets" role="group" aria-label="Pace"></div>
+        <div class="field-grid" style="margin-bottom:0;">
+          <div class="fg-item"><input type="number" inputmode="decimal" id="calcRateVal" step="0.05" min="0" placeholder="e.g. 0.5" aria-label="Target rate" data-h="h64"></div>
+          <div class="fg-item">
+            <select id="calcRateUnit" aria-label="Unit" data-h="h65">
+              <option value="kg" data-i18n="opt_kgweek">kg / week</option>
+              <option value="g" data-i18n="opt_gweek">grams / week</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-pace-info" id="calcPaceInfo" role="status" aria-live="polite"></div>
+      </div>
+      <div class="field-grid calc-optional">
+        <div class="fg-item"><label class="f-label" for="calcBodyFat" data-i18n="lbl_bodyfat">Body fat % (optional)</label><input type="number" inputmode="decimal" id="calcBodyFat" placeholder="e.g. 20" data-action="calcField"></div>
+        <div class="fg-item" id="calcGoalWeightField"><label class="f-label" for="calcGoalWeight" data-i18n="lbl_goalweight">Goal weight, kg (optional)</label><input type="number" inputmode="decimal" id="calcGoalWeight" placeholder="e.g. 75" data-action="calcField"></div>
+      </div>
+      <div class="calc-hint" data-i18n="calc_optional_hint">Body fat makes your resting energy more exact: with it the calculator counts your lean mass (muscle burns more than fat) instead of only your weight, so your calories and protein move. A wrong number moves them the wrong way - if you are not sure, estimate it below or leave it empty.</div>
+      <button type="button" class="calc-bf-toggle" id="calcBfToggle" data-action="calcBfHelp" aria-expanded="false" aria-controls="calcBfPanel" data-i18n="btn_bf_help">Don't know your body fat? Estimate it</button>
+      <div class="calc-bf-panel" id="calcBfPanel" hidden>
+        <div class="chip-row calc-bf-methods" id="calcBfMethods" role="radiogroup" aria-label="Method">
+          <button type="button" class="chip active" role="radio" aria-checked="true" data-action="calcBfMethod" data-val="tape" data-i18n="bf_m_tape">Tape measure</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-action="calcBfMethod" data-val="bmi" data-i18n="bf_m_bmi">Quick guess</button>
+        </div>
+        <div id="calcBfTape">
+          <div class="field-grid calc-bf-fields">
+            <div class="fg-item"><label class="f-label" for="calcNeck" data-i18n="lbl_neck">Neck (cm)</label><input type="number" inputmode="decimal" id="calcNeck" placeholder="e.g. 38" data-action="calcBfField"></div>
+            <div class="fg-item"><label class="f-label" for="calcWaist" data-i18n="lbl_waist">Waist (cm)</label><input type="number" inputmode="decimal" id="calcWaist" placeholder="e.g. 85" data-action="calcBfField"></div>
+            <div class="fg-item" id="calcHipField"><label class="f-label" for="calcHip" data-i18n="lbl_hip">Hips (cm)</label><input type="number" inputmode="decimal" id="calcHip" placeholder="e.g. 98" data-action="calcBfField"></div>
+          </div>
+          <div class="calc-hint" id="calcBfTapeHint" data-i18n="bf_tape_hint">Use a soft tape, relaxed, after breathing out. Neck: just under the Adam's apple. Waist: at the belly button. Hips (women): at the widest point, waist at its narrowest. Measure twice. Needs your height above; good to about 4 points.</div>
+        </div>
+        <div id="calcBfBmi" hidden>
+          <div class="calc-hint" data-i18n="bf_bmi_hint">No tape needed: this uses the age, sex, height and weight you filled in above. It cannot tell muscle from fat, so it reads too high if you are muscular. Good to about 5 points.</div>
+        </div>
+        <div class="calc-bf-result" id="calcBfResult" role="status" aria-live="polite"></div>
+        <div class="btn-row calc-bf-btns"><button type="button" class="btn btn-sm" id="calcBfUse" data-action="calcBfUse" hidden></button></div>
+        <div class="calc-hint" data-i18n="bf_other">Other ways: a body-fat scale (rough, about 5 points off), skinfold calipers used by a trainer, or a DEXA scan (the most exact).</div>
+      </div>
+    </div>
+
+    <div class="card wide-card calc-card" id="calcNumbersCard">
+      <div class="card-title" data-i18n="calc_numbers_title">📊 Your day in numbers</div>
+      <div class="calc-hero" aria-live="polite">
+        <div class="calc-hero-num"><span id="calcCalVal">–</span></div>
+        <div class="calc-hero-sub" id="calcHeroSub" data-i18n="calc_fill_in">Fill in your age, height and weight.</div>
+      </div>
+      <div class="calc-notes" id="calcNotes"></div>
+      <div class="calc-macrobar" id="calcMacroBar" role="img" aria-label="Share of calories from protein, carbs and fat"><span class="mb mb-p"></span><span class="mb mb-c"></span><span class="mb mb-f"></span></div>
+      <div class="calc-legend" id="calcLegend"></div>
+      <div class="calc-result">
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_protein">Protein / day</div><div class="calc-val" id="calcProteinVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_carbs">Carbs / day</div><div class="calc-val" id="calcCarbVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_fat">Fat / day</div><div class="calc-val" id="calcFatVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_fiber">Fibre / day</div><div class="calc-val" id="calcFiberVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_water">Water / day</div><div class="calc-val" id="calcWaterVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_maint">Maintenance calories</div><div class="calc-val" id="calcMaintVal">–</div></div>
+        <div class="calc-row"><div class="calc-lbl" data-i18n="res_bmr">BMR (at rest)</div><div class="calc-val" id="calcBmrVal">–</div></div>
+      </div>
+      <div class="calc-bmr-note" id="calcBmrNote"></div>
+      <div class="calc-goalline" id="calcGoalLine"></div>
+    </div>
+
+    <div class="card wide-card calc-card" id="calcProteinCard">
+      <div class="card-title" data-i18n="calc_protein_title">🎯 How much protein?</div>
+      <div class="calc-lede" id="calcProteinLede"></div>
+      <div class="calc-levels" id="calcLevels" role="radiogroup" aria-label="Protein level">
+        <button type="button" class="calc-level" role="radio" aria-checked="false" data-action="calcLevel" data-val="min">
+          <span class="cl-name" data-i18n="lvl_min">Minimum</span><span class="cl-g" id="calcLvMinG">–</span><span class="cl-kg" id="calcLvMinKg"></span><span class="cl-cost" id="calcLvMinCost"></span><span class="cl-sub" data-i18n="lvl_min_sub">Keeps your muscle. The cheapest.</span>
+        </button>
+        <button type="button" class="calc-level" role="radio" aria-checked="true" data-action="calcLevel" data-val="good">
+          <span class="cl-badge" data-i18n="lvl_best">Best value</span><span class="cl-name" data-i18n="lvl_good">Good</span><span class="cl-g" id="calcLvGoodG">–</span><span class="cl-kg" id="calcLvGoodKg"></span><span class="cl-cost" id="calcLvGoodCost"></span><span class="cl-sub" data-i18n="lvl_good_sub">The sweet spot for most people.</span>
+        </button>
+        <button type="button" class="calc-level" role="radio" aria-checked="false" data-action="calcLevel" data-val="max">
+          <span class="cl-name" data-i18n="lvl_max">Max</span><span class="cl-g" id="calcLvMaxG">–</span><span class="cl-kg" id="calcLvMaxKg"></span><span class="cl-cost" id="calcLvMaxCost"></span><span class="cl-sub" data-i18n="lvl_max_sub">For hard training. Costs more.</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card wide-card calc-card" id="calcPlanCard">
+      <div class="card-title" data-i18n="calc_plan_title">📋 What to eat today</div>
+      <div class="calc-lede" data-i18n="calc_plan_lede">Real, cheap food in grams. Weigh it raw or dry, before cooking. Same protein, same result: swap a meal for another if you like.</div>
+      <div class="calc-opts">
+        <div class="chip-row" id="calcDietChips" role="radiogroup" aria-label="Diet">
+          <button type="button" class="chip active" role="radio" aria-checked="true" data-action="calcDiet" data-val="all" data-i18n="diet_all">Everything</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-action="calcDiet" data-val="veg" data-i18n="diet_veg">No meat or fish</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-action="calcDiet" data-val="vegan" data-i18n="diet_vegan">Plant-based</button>
+        </div>
+        <div class="chip-row" id="calcMealChips" role="radiogroup" aria-label="Meals per day">
+          <button type="button" class="chip active" role="radio" aria-checked="true" data-action="calcMeals" data-val="3" data-i18n="meals_3">3 meals</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-action="calcMeals" data-val="4" data-i18n="meals_4">4 meals</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-action="calcMeals" data-val="5" data-i18n="meals_5">5 meals</button>
+        </div>
+      </div>
+      <div class="calc-plan-total" id="calcPlanTotal"></div>
+      <div id="calcPlanMeals"></div>
+      <div class="calc-notes" id="calcPlanNotes"></div>
+      <div class="btn-row calc-plan-btns">
+        <button type="button" class="btn btn-sm" data-action="calcShuffle" data-i18n="btn_anotherplan">🔁 Another plan</button>
+        <button type="button" class="btn btn-sm btn-ghost" id="calcShopBtn" data-action="calcShop" aria-expanded="false" aria-controls="calcShop" data-i18n="btn_shoplist">📦 Shopping list</button>
+      </div>
+      <div class="calc-shop" id="calcShop" hidden></div>
+    </div>
+
+    <div class="card wide-card calc-card program-collapsible" id="calcWhyCard">
+      <button type="button" class="program-collapse-toggle" data-action="calcWhy" aria-expanded="false" aria-controls="calcWhyBody">
+        <span class="program-collapse-label" data-i18n="calc_why_title">How these numbers were worked out</span>
+        <span class="program-collapse-chevron" id="calcWhyChevron">▾</span>
+      </button>
+      <div class="program-collapse-body" id="calcWhyBody">
+        <ul class="calc-why" id="calcWhy"></ul>
+      </div>
+    </div>
+
+    <div class="card wide-card calc-card calc-disclaimer-card"><div class="calc-disclaimer" data-i18n="calc_disclaimer">A general guide for healthy adults, not medical or dietary advice. Food values and prices are rounded and will differ in your shop. If you are pregnant or breastfeeding, have a medical condition (kidneys, diabetes, an eating disorder) or take medication, ask a doctor or dietitian first.</div></div>
+
+    </div><!-- /toolPane-calc -->
+
+    <div class="tool-pane" id="toolPane-countdown">
+    <div class="card wide-card">
+      <div class="card-title" data-i18n="card_countdown">Countdown Timer</div>
+      <div class="field-grid">
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_minutes">Minutes</label><input type="number" id="cdMin" value="1" min="0"></div>
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_seconds">Seconds</label><input type="number" id="cdSec" value="0" min="0" max="59"></div>
+      </div>
+      <div class="timer-display">
+        <div class="timer-num" id="cdDisplay">01:00</div>
+        <div class="timer-sub" id="cdStatus" data-i18n="st_ready">Ready</div>
+      </div>
+      <div class="btn-row" style="justify-content:center;margin-top:10px;">
+        <button class="btn" data-h="h198" data-i18n="btn_startword">▶ Start</button>
+        <button class="btn btn-ghost" data-h="h199" data-i18n="btn_pause">⏸ Pause</button>
+        <button class="btn btn-ghost" data-h="h200" data-i18n="btn_reset">↺ Reset</button>
+      </div>
+    </div>
+    </div><!-- /toolPane-countdown -->
+
+    <div class="tool-pane" id="toolPane-circuit">
+    <div class="card wide-card">
+      <div class="card-title" data-i18n="card_circuit">Circuit Timer</div>
+      <div class="field-grid">
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_rounds">Rounds</label><input type="number" id="ctRounds" value="8" min="1"></div>
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_work">Work (sec)</label><input type="number" id="ctWork" value="30" min="1"></div>
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_restsec">Rest (sec)</label><input type="number" id="ctRest" value="10" min="0"></div>
+        <div class="fg-item"><label class="f-label" data-i18n="lbl_getready">Get Ready (sec)</label><input type="number" id="ctPrep" value="5" min="0"></div>
+      </div>
+
+      <div class="timer-gauge" data-phase="idle">
+        <div class="ring-phase" id="ctPhase" data-i18n="st_ready">Ready</div>
+        <div class="ring-time" id="ctTime">--</div>
+        <div class="timer-bar-track"><div class="timer-bar-fill" id="ctBarFill"></div></div>
+        <div class="ring-round" id="ctRoundLbl">Round 0 / 0</div>
+      </div>
+
+      <div class="btn-row" style="justify-content:center;">
+        <button class="btn" data-h="h201" data-i18n="btn_startword">▶ Start</button>
+        <button class="btn btn-ghost" data-h="h202" data-i18n="btn_pause">⏸ Pause</button>
+        <button class="btn btn-ghost" data-h="h203" data-i18n="btn_skip">⏭ Skip</button>
+        <button class="btn btn-ghost" data-h="h204" data-i18n="btn_reset">↺ Reset</button>
+      </div>
+    </div>
+    </div><!-- /toolPane-circuit -->
+  </div><!-- /toolsView-fitness -->
+
+</div>
+
+<div class="modal-overlay" id="eraseModal">
+  <div class="modal-box">
+    <div class="modal-title" style="color:var(--red);" data-i18n="modal_erasetitle">⚠️ Erase All Data</div>
+    <div class="lock-sub" style="text-align:left;margin-bottom:14px;" data-i18n="erase_body_text">This permanently deletes your profile, photos, agenda, workouts, to-do list, and settings from this device. There is no backup — <b>this cannot be undone.</b></div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_typeerase">Type ERASE to confirm</label>
+      <input type="text" id="eraseConfirmInput" placeholder="ERASE" data-h="h71" autocomplete="off">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h72" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn btn-danger" id="eraseConfirmBtn" data-h="h73" disabled style="opacity:.4;" data-i18n="btn_eraseeverything">Erase Everything</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_exporttitle">📤 Export Data</div>
+    <div class="lock-sub" style="text-align:left;margin-bottom:14px;" data-i18n="export_body_text">Bundles everything on this device — profile, photos, agenda, workouts — into one encrypted file you can move to another browser or device.</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_exportpassword">Password to encrypt with</label>
+      <input type="password" id="exportPasswordInput" autocomplete="off" data-h="h74">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_exportpasswordconfirm">Confirm password</label>
+      <input type="password" id="exportPasswordConfirmInput" autocomplete="off" data-h="h75">
+    </div>
+    <div class="modal-field">
+      <label class="check-row">
+        <input type="checkbox" id="exportUseKeyFile">
+        <span class="check-row-label" data-i18n="lbl_usekeyfile_export">Also protect this backup with a separate key file</span>
+      </label>
+      <div class="check-hint" data-i18n="hint_keyfile_export">Downloads two files instead of one — the backup and a key file. Store them separately; both plus the password are needed to restore.</div>
+    </div>
+    <div class="lock-error" id="exportError"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h76" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" id="exportConfirmBtn" data-h="h77" disabled style="opacity:.4;" data-i18n="btn_exportnow">Export</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_importtitle">📥 Import Data</div>
+    <div class="lock-sub" style="text-align:left;margin-bottom:14px;" data-i18n="import_body_text">Enter the password you used when exporting. Importing replaces everything currently on this device.</div>
+    <div class="modal-field" id="importKeyFileRow" style="display:none;">
+      <label class="f-label" data-i18n="lbl_importkeyfile">Key File</label>
+      <div class="check-hint" style="margin-top:0;margin-bottom:8px;" data-i18n="hint_importkeyfile">This backup was protected with a separate key file. Select it below.</div>
+      <input type="file" accept=".json,application/json" id="importKeyFileInput" style="display:none;" data-h="h238">
+      <button type="button" class="btn btn-ghost btn-sm" data-h="h237" data-i18n="btn_selectkeyfile">📎 Select Key File</button>
+      <div class="keyfile-name empty" id="importKeyFileName" data-i18n="lbl_nofileselected">No file selected</div>
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_importpassword">Password</label>
+      <input type="password" id="importPasswordInput" autocomplete="off" data-h="h78">
+    </div>
+    <div class="lock-error" id="importError"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h79" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn btn-danger" id="importConfirmBtn" data-h="h80" data-i18n="btn_importnow">Decrypt &amp; Import</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="externalProgramModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_externalprogram">📂 Import a program</div>
+    <div class="lock-sub" style="text-align:left;margin-bottom:14px;" data-i18n="externalprogram_hint">Import a workout program from a .txt or .csv file, or download a blank guide to fill in and import.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" data-h="h81" data-i18n="btn_import">📂 Import Program (.txt/.csv)</button>
+      <button class="btn btn-ghost btn-sm" data-h="h82" data-i18n="btn_template_txt">📄 Download Guide (.txt)</button>
+      <button class="btn btn-ghost btn-sm" data-h="h83" data-i18n="btn_template_csv">📊 Download Guide (.csv)</button>
+      <input type="file" accept=".txt,.csv,text/plain,text/csv" id="programFileInput" style="display:none;" data-h="h84">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h85" data-i18n="btn_closemodal">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHECK-IN HISTORY MODAL (list view of the currently selected metric — an alternative to the graph) -->
+<div class="modal-overlay" id="checkinHistoryModal">
+  <div class="modal-box modal-box-log">
+    <div class="modal-log-header">
+      <div class="modal-title" id="checkinHistoryTitle" data-i18n="modal_checkinhistory_title">📋 History</div>
+    </div>
+    <div class="wl-hist-list" id="checkinHistoryList"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h242" data-i18n="btn_closemodal">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SETTINGS: a whole page of its own - it opens over everything, wherever the page behind it is scrolled to ══════════════ -->
+<div class="sheet-page" id="bannerEditModal" role="dialog" aria-modal="true" aria-labelledby="bannerEditTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h18" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="bannerEditTitle" data-i18n="modal_editprofile_title">⚙ Settings</h2>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner">
+
+    <!-- CHALLENGE: start it, change its start, reset it, and how long it lasts (these were on the Agenda page and in a pop-up) -->
+    <section class="card sheet-card" id="challengeCard">
+      <div class="card-title"><span class="sg-icon">🎯</span> <span data-i18n="sg_challenge">Challenge</span></div>
+      <div class="modal-field">
+        <div class="btn-row">
+          <button class="btn btn-block" id="startBtn" data-h="h95" data-i18n="btn_start_challenge">▶ Start Challenge Today</button>
+        </div>
+        <div class="btn-row" id="startExtraRow" style="margin-top:8px; display:none;">
+          <button class="btn btn-ghost btn-sm" data-h="h96" data-i18n="btn_edit_startdate">✏️ Edit Start Date &amp; Time</button>
+          <button class="btn btn-danger btn-sm" data-h="h97" data-i18n="btn_reset_challenge">↺ Reset Challenge</button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="card_challenge">Challenge Length</label>
+        <div class="goal-row">
+          <div class="chip-row" id="goalChips"></div>
+        </div>
+        <div class="custom-goal">
+          <input type="number" id="customGoalInput" min="1" max="3650" placeholder="Custom # of days" data-i18n-ph="lbl_customgoal_ph" data-h="h27">
+          <button class="btn btn-ghost btn-sm" data-h="h28" data-i18n="btn_set">Set</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="clearCustomGoalBtn" style="display:none;" data-h="h29" data-i18n-aria="tt_removecustomgoal" aria-label="Remove custom challenge length">✕</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">💧</span> <span data-i18n="sg_water">Water</span></div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="lbl_watersettings">Water Cup Sizes</label>
+        <div class="water-cup-settings">
+          <div class="fg-item"><label class="f-label" data-i18n="lbl_cupxs">Extra Small (ml)</label><input type="number" id="waterCupXSInput" min="1" data-h="h30"></div>
+          <div class="fg-item"><label class="f-label" data-i18n="lbl_cupsmall">Small (ml)</label><input type="number" id="waterCupSmallInput" min="1" data-h="h31"></div>
+          <div class="fg-item"><label class="f-label" data-i18n="lbl_cupmedium">Medium (ml)</label><input type="number" id="waterCupMediumInput" min="1" data-h="h32"></div>
+          <div class="fg-item"><label class="f-label" data-i18n="lbl_cuplarge">Large (ml)</label><input type="number" id="waterCupLargeInput" min="1" data-h="h33"></div>
+          <div class="fg-item"><label class="f-label" data-i18n="lbl_cupxl">Extra Large (ml)</label><input type="number" id="waterCupXLInput" min="1" data-h="h34"></div>
+        </div>
+        <div class="fg-item" style="margin-top:10px;"><label class="f-label" data-i18n="lbl_dailytarget">Daily Target (ml)</label><input type="number" id="waterTargetMlInput" min="1" data-h="h35"></div>
+      </div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">📏</span> <span data-i18n="card_addmeasure">Track Additional Measurements</span></div>
+      <div class="modal-field">
+        <div id="measureTypeList"></div>
+        <div class="add-row">
+          <input type="text" id="measureTypeInput" placeholder="e.g. Chest (cm), Body Fat %..." data-i18n-ph="ph_measuretype_field" data-h="h37">
+          <button class="btn btn-sm" data-h="h38" data-i18n="btn_add">Add</button>
+        </div>
+        <div class="lock-sub" style="text-align:left;margin-top:8px;" data-i18n="checkin_hint">Once added, log values for these under Agenda → any date → Measurements.</div>
+      </div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">🎨</span> <span data-i18n="sg_appearance">Appearance</span></div>
+      <div class="modal-field">
+        <label class="f-label" id="skinLabel" data-i18n="lbl_skin">Theme</label>
+        <div class="skin-row" id="skinRow" role="radiogroup" aria-labelledby="skinLabel"></div>
+        <div class="skin-icon-row" id="skinIconRow" hidden>
+          <button type="button" class="chip skin-icon-btn" id="skinIconBtn" aria-pressed="true" data-action="skinIcon" data-i18n="skin_icon_label">Change the app icon too</button>
+          <div class="skin-hint" data-i18n="skin_icon_hint">The icon in your app list follows the theme. Some phones take a few seconds to show it, and a few need the icon put on the home screen again.</div>
+        </div>
+        <div class="icon-style-block" id="iconStyleBlock" hidden>
+          <label class="f-label" id="iconStyleLabel" data-i18n="lbl_icon_style">App icon</label>
+          <div class="mode-row" id="iconStyleRow" role="radiogroup" aria-labelledby="iconStyleLabel"></div>
+          <div class="skin-hint" data-i18n="icon_style_hint">Minimal: the flat bear. Detailed: the bear with all its texture. The icon in your app list changes when you tap one.</div>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" id="modeLabel" data-i18n="lbl_mode">Mode</label>
+        <div class="mode-row" id="modeRow" role="radiogroup" aria-labelledby="modeLabel"></div>
+        <div class="skin-hint" data-i18n="mode_hint">Each theme keeps its own mode.</div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="lbl_theme">Accent Color</label>
+        <div class="theme-swatch-row" id="themeSwatchRow"></div>
+      </div>
+    </section>
+
+    <section class="card sheet-card" id="bsNotifyCard" hidden>
+      <div class="card-title"><span>Notifications</span></div>
+      <div class="modal-field">
+        <div id="bsNotifyStatus" role="status" aria-live="polite"></div>
+        <div class="bsn-row" id="bsNotifyActions" hidden></div>
+        <p class="lock-sub" id="bsNotifyNote" hidden></p>
+      </div>
+    </section>
+
+    <section class="card sheet-card rh-card" id="remHealthCard" hidden>
+      <div class="card-title"><span class="sg-icon">🔔</span> <span data-i18n="rh_title">Reminder check</span></div>
+      <div class="modal-field">
+        <div class="rh-summary" id="remHealthSummary" role="status" aria-live="polite"></div>
+        <div class="rh-rows" id="remHealthRows"></div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="rh_opts_label">Options</label>
+        <div class="rh-opts" id="remHealthOpts"></div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="rh_test_label">Try it</label>
+        <div class="btn-row"><button type="button" class="btn btn-sm" data-action="remTest" data-i18n="rh_test_btn">Send a test reminder</button></div>
+        <div class="rh-msg" id="remHealthMsg" role="status" aria-live="polite"></div>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="rh_log_label">Recent reminders</label>
+        <div class="rh-log" id="remHealthLog"></div>
+      </div>
+      <div class="skin-hint rh-tip" data-i18n="rh_tip">Still late? Many phones (OnePlus, Xiaomi, Oppo, Samsung, Huawei...) have a second switch: Settings &gt; Apps &gt; BeerSports &gt; Battery &gt; allow background activity (or auto-launch). Also lock BeerSports in the recent-apps screen, so swiping it away does not stop it.</div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">🗂️</span> <span data-i18n="sg_data">Data</span></div>
+      <div class="modal-field">
+        <label class="f-label" data-i18n="lbl_backuptransfer">Backup &amp; Transfer</label>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-sm" data-h="h40" data-i18n="btn_exportdata">📤 Export Data</button>
+          <button class="btn btn-ghost btn-sm" data-h="h41" data-i18n="btn_importdata">📥 Import Data</button>
+          <input type="file" accept=".json,application/json" id="importFileInput" style="display:none;" data-h="h42">
+        </div>
+      </div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">🔒</span> <span data-i18n="card_applock">App Lock</span></div>
+      <div class="modal-field">
+        <div class="lock-status-text" id="lockStatusText"></div>
+        <div class="btn-row" id="lockBtnRow"></div>
+        <div id="autoLockRow" style="margin-top:12px; display:none;">
+          <label class="f-label" data-i18n="lbl_autolock">Auto-lock after inactivity</label>
+          <select id="autoLockSelect" data-h="h44">
+            <option value="0" data-i18n="opt_autolock_never">Never</option>
+            <option value="1" data-i18n="opt_autolock_1min">1 minute</option>
+            <option value="5" data-i18n="opt_autolock_5min">5 minutes</option>
+            <option value="15" data-i18n="opt_autolock_15min">15 minutes</option>
+            <option value="30" data-i18n="opt_autolock_30min">30 minutes</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card sheet-card sheet-danger">
+      <div class="card-title"><span class="sg-icon">⚠️</span> <span data-i18n="card_danger">Danger Zone</span></div>
+      <div class="modal-field">
+        <div class="lock-status-text" data-i18n="danger_text">Permanently erase everything stored on this device — profile, photos, agenda, workouts, to-do list, settings. This cannot be undone.</div>
+        <button class="btn btn-danger btn-block" style="margin-top:10px;" data-h="h46" data-i18n="btn_eraseall">Erase All Data</button>
+      </div>
+    </section>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ CHECK-IN: a page of its own, opened by the Check-in button on the Agenda ══════════════ -->
+<div class="sheet-page" id="checkinModal" role="dialog" aria-modal="true" aria-labelledby="checkinSheetTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h263" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="checkinSheetTitle" data-i18n="checkin_sheet_title">📈 Check-in</h2>
+      <div class="sheet-sub" data-i18n="checkin_sheet_sub">Your workout journal, charts and record</div>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner checkin-inner">
+    <div class="card wide-card wl-journal-card">
+      <div class="card-title wl-journal-title" data-i18n="card_workoutjournal">🏋️ Workout Journal</div>
+      <div class="wl-journal-grid">
+        <div class="wl-journal-col">
+          <div class="modal-field">
+            <label class="f-label" data-i18n="st_exercise">Exercise</label>
+            <select id="wlExerciseSelect" data-h="h67"></select>
+          </div>
+          <div class="modal-field" id="wlCustomNameRow" style="display:none;">
+            <input type="text" id="wlCustomName" placeholder="Exercise name..." data-i18n-ph="ph_exname" data-h="h68">
+          </div>
+
+          <div id="wlStatRow"></div>
+
+          <label class="f-label" data-i18n="lbl_todaysets">Today's Sets</label>
+          <div class="wl-sets-wrap">
+            <div id="wlSetsEditor"></div>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button type="button" class="btn btn-ghost btn-sm" data-h="h69" data-i18n="btn_addset">+ Add Set</button>
+            <button type="button" class="btn btn-sm" data-h="h70" data-i18n="btn_savetodaylog">✓ Save Today's Log</button>
+          </div>
+        </div>
+        <div class="wl-journal-col">
+          <div id="wlHistory"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card checkin-report-card wide-card">
+      <div class="card-title"><span data-i18n="card_reportperiod">📈 Charts and Reports</span> <button type="button" class="card-title-icon-btn" id="checkinHistoryBtn" data-h="h241" aria-label="History" data-i18n-aria="tt_checkinhistory" title="History" data-i18n-title="tt_checkinhistory">📋</button></div>
+      <div class="checkin-report-top">
+        <div class="checkin-metric-wrap">
+          <label class="f-label" data-i18n="card_metric">Choose a metric</label>
+          <select id="checkinMetricSelect" data-h="h66"></select>
+        </div>
+      </div>
+      <div class="chip-row checkin-period-row" id="checkinPeriodChips"></div>
+
+      <div class="checkin-chart-title" id="checkinChartTitle"></div>
+      <div class="checkin-trend" id="checkinTrendSummary"></div>
+      <div class="checkin-chart-wrap" id="checkinChartWrap"></div>
+    </div>
+
+    <!-- DAILY TO-DO TRACKER: the history the daily reset would otherwise throw away. A short card here; the whole record - forever - is on its own page (#dqModal) -->
+    <div class="card wide-card dq-card" id="dqCard">
+      <div class="card-title"><span data-i18n="card_dq">🛡️ Daily To-Do Tracker</span></div>
+      <p class="dq-lede" data-i18n="dq_lede">The Daily To-Do starts fresh every morning. This is the record it leaves behind.</p>
+      <div class="dq-forever" id="dqForever"></div>
+      <div class="dq-stats" id="dqStats"></div>
+      <button type="button" class="btn btn-block dq-open-btn" id="dqOpenBtn" data-h="h256" data-i18n="dq_open">📜 Open the tracker</button>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ DAILY TO-DO TRACKER: the whole record, from the first day, forever ══════════════ -->
+<div class="sheet-page" id="dqModal" role="dialog" aria-modal="true" aria-labelledby="dqSheetTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h257" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="dqSheetTitle" data-i18n="dq_sheet_title">Daily To-Do</h2>
+      <div class="sheet-sub" id="dqSheetSub"></div>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner">
+
+    <section class="card sheet-card dq-hero-card">
+      <div class="card-title"><span data-i18n="dq_forever_title">Progress, forever</span></div>
+      <div class="dq-forever dq-forever-big" id="dqForeverBig"></div>
+      <div class="dq-stats" id="dqSheetStats"></div>
+    </section>
+
+    <section class="card sheet-card">
+      <div class="card-title"><span data-i18n="dq_roll_title">The roll of days</span></div>
+      <div class="folio dq-folio" id="dqFolio" data-season="3">
+        <div class="folio-head">
+          <button type="button" class="folio-turn" data-action="dqMonth" data-delta="-1" aria-label="Previous month" data-i18n-aria="tt_prevmonth">◀</button>
+          <div class="folio-title">
+            <div class="folio-titletext">
+              <div class="agenda-month-lbl folio-month" id="dqMonthLbl"></div>
+            </div>
+          </div>
+          <button type="button" class="folio-turn" data-action="dqMonth" data-delta="1" aria-label="Next month" data-i18n-aria="tt_nextmonth">▶</button>
+        </div>
+        <div class="folio-leaf dq-leaf" id="dqLeaf">
+          <div class="dq-dow" id="dqDow"></div>
+          <div class="dq-grid" id="dqGrid"></div>
+        </div>
+        <div class="folio-foot">
+          <div class="dq-legend" id="dqLegend"></div>
+          <button type="button" class="btn btn-ghost btn-sm folio-today" data-action="dqToday" data-i18n="btn_today">Today</button>
+        </div>
+      </div>
+      <div class="dq-day" id="dqDay"></div>
+    </section>
+
+    <section class="card sheet-card" id="dqDeedsCard">
+      <div class="card-title"><span data-i18n="dq_perdeed">Each task</span></div>
+      <p class="dq-lede" data-i18n="dq_perdeed_note">The last seven days, and how often it was done since the first day.</p>
+      <div class="dq-deeds" id="dqDeeds"></div>
+    </section>
+
+    <div class="btn-row dq-foot">
+      <button type="button" class="btn btn-ghost btn-sm" data-action="dqOpenList" data-i18n="dq_openlist">📅 Open the Daily To-Do</button>
+      <button type="button" class="btn btn-ghost btn-sm btn-danger" data-action="dqClear" data-i18n="dq_clear">↺ Clear record</button>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ DAILY TO-DO TASK: which days it is called for (every day, chosen weekdays, or a rhythm) and its reminders ══════════════ -->
+<div class="sheet-page" id="dtEditModal" role="dialog" aria-modal="true" aria-labelledby="dtEditTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h264" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="dtEditTitle" data-i18n="dt_title">Daily task</h2>
+      <div class="sheet-sub" id="dtEditSub"></div>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner">
+
+    <section class="card sheet-card">
+      <div class="card-title"><span class="sg-icon">✎</span> <span data-i18n="dt_name_title">The task</span></div>
+      <div class="modal-field">
+        <input type="text" id="dtName" maxlength="120" autocomplete="off" data-action="dtName" data-i18n-ph="ph_adddailytask" placeholder="Add a daily task...">
+      </div>
+    </section>
+
+    <section class="card sheet-card" id="dtPriCard">
+      <div class="card-title"><span class="sg-icon">🎯</span> <span data-i18n="dt_pri_title">How important</span></div>
+      <div class="dt-pri" id="dtPri" role="radiogroup" data-i18n-aria="dt_pri_aria" aria-label="Priority">
+        <button type="button" class="dt-pri-btn pri-must" role="radio" aria-checked="false" data-action="dtPri" data-key="must"><b data-i18n="pri_must">Must do</b><small data-i18n="pri_must_sub">Has to happen</small></button>
+        <button type="button" class="dt-pri-btn pri-should" role="radio" aria-checked="false" data-action="dtPri" data-key="should"><b data-i18n="pri_should">Should do</b><small data-i18n="pri_should_sub">Important</small></button>
+        <button type="button" class="dt-pri-btn pri-could" role="radio" aria-checked="false" data-action="dtPri" data-key="could"><b data-i18n="pri_could">Could do</b><small data-i18n="pri_could_sub">Nice to do</small></button>
+        <button type="button" class="dt-pri-none" role="radio" aria-checked="true" data-action="dtPri" data-key="none" data-i18n="pri_none">No priority</button>
+      </div>
+      <p class="dt-lede dt-pri-lede" id="dtPriLede"></p>
+    </section>
+
+    <section class="card sheet-card" id="dtDaysCard">
+      <div class="card-title"><span class="sg-icon">📅</span> <span data-i18n="dt_days_title">How often</span></div>
+      <div class="chip-row dt-mode dt-mode4" id="dtMode" role="tablist">
+        <button type="button" class="chip" role="tab" data-action="dtMode" data-key="every" data-i18n="dt_mode_every">Every day</button>
+        <button type="button" class="chip" role="tab" data-action="dtMode" data-key="days" data-i18n="dt_mode_days">Certain days</button>
+        <button type="button" class="chip" role="tab" data-action="dtMode" data-key="cycle" data-i18n="dt_mode_cycle">A rhythm</button>
+        <button type="button" class="chip" role="tab" data-action="dtMode" data-key="once" data-i18n="dt_mode_once">Just once</button>
+      </div>
+      <p class="dt-lede" id="dtLede"></p>
+
+      <div class="dt-pane" id="dtPaneDays">
+        <div class="dt-weekdays" id="dtWeekdays"></div>
+        <div class="chip-row dt-presets">
+          <button type="button" class="chip" data-action="dtWdPreset" data-set="0,1,2,3,4" data-i18n="dt_wd_weekdays">Weekdays</button>
+          <button type="button" class="chip" data-action="dtWdPreset" data-set="5,6" data-i18n="dt_wd_weekend">Weekend</button>
+          <button type="button" class="chip" data-action="dtWdPreset" data-set="0,2,4" data-i18n="dt_wd_mwf">Mon · Wed · Fri</button>
+          <button type="button" class="chip" data-action="dtWdPreset" data-set="1,3" data-i18n="dt_wd_tt">Tue · Thu</button>
+        </div>
+      </div>
+
+      <div class="dt-pane" id="dtPaneCycle">
+        <div class="dt-stepper">
+          <span class="f-label" data-i18n="dt_cycle_len">Length of the rhythm</span>
+          <span class="dt-stepper-ctl">
+            <button type="button" class="btn btn-ghost btn-sm dt-step" id="dtLenMinus" data-action="dtCycleLen" data-delta="-1" data-i18n-aria="dt_shorter" aria-label="One day shorter">−</button>
+            <b class="dt-len" id="dtLen">6</b>
+            <button type="button" class="btn btn-ghost btn-sm dt-step" id="dtLenPlus" data-action="dtCycleLen" data-delta="1" data-i18n-aria="dt_longer" aria-label="One day longer">＋</button>
+          </span>
+        </div>
+        <div class="dt-cycle-days" id="dtCycleDays"></div>
+        <div class="dt-legend"><span class="dt-leg"><i class="dt-dot on"></i><span data-i18n="dt_do">Do</span></span><span class="dt-leg"><i class="dt-dot rest"></i><span data-i18n="dt_rest">Rest</span></span><span class="dt-legnote" data-i18n="dt_tapday">Tap a day to switch it.</span></div>
+        <div class="chip-row dt-presets" id="dtCyclePresets"></div>
+        <div class="modal-field dt-start">
+          <label class="f-label" for="dtCycleStart" data-i18n="dt_cycle_start">Day 1 of the rhythm is</label>
+          <input type="date" id="dtCycleStart" data-action="dtCycleStart">
+        </div>
+      </div>
+
+      <div class="dt-preview-wrap">
+        <div class="dt-preview-title" data-i18n="dt_next14">The next two weeks</div>
+        <div class="dt-preview" id="dtPreview"></div>
+      </div>
+      <div class="dt-warn" id="dtWarn" role="alert" data-i18n="dt_pick_one">Pick at least one day to do. Until then the task keeps its earlier days.</div>
+    </section>
+
+    <section class="card sheet-card" id="dtRemCard">
+      <div class="card-title"><span class="sg-icon">🔔</span> <span data-i18n="dt_rem_title">Reminders</span></div>
+      <p class="dt-lede" data-i18n="dt_rem_lede">A notification at each of these times, on the days the task is called for. Once you tick the task off, the rest of that day's reminders stay quiet.</p>
+      <div class="rem-warn" data-rem-warn role="alert"><span data-i18n="rem_notif_off">Notifications are switched off for BeerSports, so reminders cannot ring.</span> <button type="button" class="btn btn-sm" data-action="remFixNotifications" data-i18n="rem_notif_fix">Turn on</button></div>
+      <div class="dt-times" id="dtTimes"></div>
+      <div class="add-row dt-time-add">
+        <input type="time" id="dtTimeInput" value="08:00" aria-label="Reminder time" data-action="dtTimeTouched">
+        <button type="button" class="btn btn-sm" data-action="dtAddTime" data-i18n="dt_add_time">＋ Add time</button>
+      </div>
+      <div class="rem-sound-row">
+        <button type="button" class="chip rem-sound-btn active" id="dtSoundBtn" aria-pressed="true" data-action="dtSound"></button>
+        <div class="rem-sound-hint" data-i18n="rem_sound_hint">Off: the reminder still pops up, but makes no sound.</div>
+      </div>
+      <div class="lock-sub dt-web-note" data-i18n="rem_web_hint">Reminders ring in the Android app. In a browser they only wait here for you.</div>
+    </section>
+
+    <div class="btn-row dt-foot">
+      <button type="button" class="btn btn-block" data-action="dtDone" data-i18n="dt_done">✓ Done</button>
+      <button type="button" class="btn btn-ghost btn-block btn-danger" data-action="dtDelete" data-i18n="dt_delete">Delete task</button>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ VOICE COACH: which workout, which warm-up, which voice (a page of its own, reached by "Change") ══════════════ -->
+<div class="sheet-page" id="ltOptionsModal" role="dialog" aria-modal="true" aria-labelledby="ltOptionsTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h258" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="ltOptionsTitle" data-i18n="lt_opts_title">🔊 Voice Coach</h2>
+      <div class="sheet-sub" data-i18n="lt_opts_sub">Pick your workout, the warm-up and the voice</div>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner">
+
+    <section class="card sheet-card">
+      <div class="card-title"><span data-i18n="lt_opts_plan">Your workout</span></div>
+      <div class="modal-field">
+        <label class="f-label" for="ltProgramSelect" data-i18n="lbl_program">Program</label>
+        <select id="ltProgramSelect" data-h="h205"></select>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" for="ltBlockSelect" data-i18n="lbl_block">Block / Week</label>
+        <select id="ltBlockSelect" data-h="h206"></select>
+      </div>
+      <div class="modal-field">
+        <label class="f-label" for="ltDaySelect" data-i18n="lbl_day">Day</label>
+        <select id="ltDaySelect" data-h="h207"></select>
+      </div>
+      <div class="modal-field" id="ltWarmupField">
+        <label class="f-label" for="ltWarmupSelect" data-i18n="st_warmup">Warm-up</label>
+        <select id="ltWarmupSelect" data-h="h208"></select>
+      </div>
+    </section>
+
+    <section class="card sheet-card" id="ltVoiceCard">
+      <div class="card-title"><span data-i18n="lt_opts_voice">The coach</span></div>
+      <div class="modal-field" id="ltVoiceField">
+        <label class="f-label" for="ltVoiceSelect" data-i18n="lbl_voice">Coach Voice</label>
+        <select id="ltVoiceSelect" data-h="h253"></select>
+      </div>
+    </section>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ EDIT YOUR PROGRAM: a page of its own (it used to be a long card under the Voice Coach, with its tools in numbered folders) ══════════════ -->
+<div class="sheet-page" id="programEditModal" role="dialog" aria-modal="true" aria-labelledby="programEditTitle">
+  <div class="sheet-head">
+    <button type="button" class="sheet-back" data-h="h266" data-i18n-aria="tt_back" aria-label="Back">←</button>
+    <div class="sheet-titles">
+      <h2 class="sheet-title" id="programEditTitle" data-i18n="pe_title">✏️ Your program</h2>
+      <div class="sheet-sub" data-i18n="pe_sub">Programs, weeks, days and exercises</div>
+    </div>
+  </div>
+  <div class="sheet-body"><div class="sheet-inner">
+
+    <section class="card sheet-card pe-card" id="peProgramCard">
+      <div class="pe-head">
+        <div class="card-title"><span data-i18n="lbl_program">Program</span></div>
+        <button type="button" class="pe-more" data-action="peMore" data-target="peProgramTools" aria-expanded="false" aria-controls="peProgramTools"><span data-i18n="pe_more">More</span><span class="pe-chev" aria-hidden="true">▾</span></button>
+      </div>
+      <select id="programSelect" class="pnav-select" data-h="h218" aria-label="Program" data-i18n-aria="lbl_program"></select>
+      <div class="pnav-field pe-name-field">
+        <label class="pnav-field-label" for="programNameInput"><span class="pnav-field-icon" aria-hidden="true">✏️</span><span data-i18n="pe_prog_name">Program name</span></label>
+        <input type="text" id="programNameInput" class="pnav-select" maxlength="60" autocomplete="off" spellcheck="false" data-action="renameProgram" data-i18n-ph="pe_prog_name_ph" placeholder="Name of this program" style="width:100%;">
+      </div>
+      <div class="pe-tools" id="peProgramTools">
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h215" data-i18n="pe_btn_newprogram">＋ New program</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h217" data-i18n="pe_btn_import">📂 Import a file</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h262" id="downloadProgramBtn" data-i18n="pe_btn_download">⬇ Download</button>
+        <button type="button" class="btn btn-danger btn-sm" data-h="h216" data-i18n="pe_btn_delprogram">Delete program</button>
+      </div>
+    </section>
+
+    <section class="card sheet-card pe-card" id="peBlockCard">
+      <div class="pe-head">
+        <div class="card-title"><span data-i18n="lbl_block">Block / Week</span></div>
+        <button type="button" class="pe-more" data-action="peMore" data-target="peBlockTools" aria-expanded="false" aria-controls="peBlockTools"><span data-i18n="pe_more">More</span><span class="pe-chev" aria-hidden="true">▾</span></button>
+      </div>
+      <div id="blockTabs" class="block-tabs"></div>
+      <div class="pe-tools" id="peBlockTools">
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h220" data-i18n="btn_addblock">+ Add Block/Week</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h246" data-i18n="btn_dupblock">⧉ Duplicate Week</button>
+        <button type="button" class="btn btn-danger btn-sm" data-h="h221" data-i18n="btn_delblock">Delete Block</button>
+      </div>
+    </section>
+
+    <section class="card sheet-card pe-card" id="peDayCard">
+      <div class="pe-head">
+        <div class="card-title"><span data-i18n="lbl_day">Day</span></div>
+        <button type="button" class="pe-more" data-action="peMore" data-target="peDayTools" aria-expanded="false" aria-controls="peDayTools"><span data-i18n="pe_more">More</span><span class="pe-chev" aria-hidden="true">▾</span></button>
+      </div>
+      <div class="day-tabs" id="dayTabs"></div>
+      <div class="pe-toggles">
+        <button type="button" class="btn btn-ghost btn-sm" id="restToggleBtn" data-h="h225" data-i18n="btn_markrest">Mark Rest Day</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="circuitToggleBtn" data-h="h239" data-i18n="btn_circuitorder" title="Cycles through all exercises each round instead of finishing one exercise's sets first — great for HIIT/circuits.">🔁 Circuit Order</button>
+      </div>
+      <div class="pnav-field" id="dayRoundsWrap" style="display:none;">
+        <span class="pnav-field-label"><span class="pnav-field-icon" aria-hidden="true">🔁</span><span data-i18n="lbl_rounds">Rounds</span></span>
+        <input type="number" min="1" step="1" id="dayRoundsInput" class="pnav-select" data-action="updateDayRounds" inputmode="numeric" style="width:100%;">
+      </div>
+      <div class="pe-tools" id="peDayTools">
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h223" data-i18n="btn_addday">+ Add Day</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-h="h247" data-i18n="btn_dupday">⧉ Duplicate Day</button>
+        <button type="button" class="btn btn-danger btn-sm" data-h="h224" data-i18n="btn_delday">Delete Day</button>
+      </div>
+    </section>
+
+    <section class="card sheet-card pe-card" id="peWarmupCard">
+      <div class="card-title"><span data-i18n="pe_warmup">Warm-up</span></div>
+      <div id="warmupLibList"></div>
+      <div class="ex-add-row">
+        <button type="button" class="btn btn-ghost" data-h="h228" data-i18n="btn_choosewarmuplib">📚 Choose warm up from Library</button>
+        <button type="button" class="btn btn-ghost" data-h="h229" data-i18n="btn_buildwarmup">➕ Build Custom Warm-up</button>
+      </div>
+    </section>
+
+    <section class="card sheet-card pe-card" id="peExerciseCard">
+      <div class="card-title"><span id="exSectionLabel">Exercises</span></div>
+      <div class="ex-section"><div id="dayContent"></div></div>
+      <div class="ex-add-row ex-add-row-main" id="exerciseAddRow">
+        <button type="button" class="btn btn-ghost" data-h="h231" data-i18n="btn_chooseexlib">📚 Choose workout from Library</button>
+        <button type="button" class="btn btn-ghost" data-h="h232" data-i18n="btn_addownexercise">✏️ Add Your Own Exercise</button>
+      </div>
+    </section>
+
+  </div></div>
+</div>
+
+<!-- ══════════════ AGENDA ══════════════ -->
+<div class="page active" id="page-agenda">
+  <div class="bs-notify-banner" data-bsn-banner hidden></div>
+
+  <div class="card wide-card agenda-combo-card">
+    <div class="agenda-combo-grid">
+
+      <div class="agenda-combo-col agenda-combo-cal">
+        <div class="card-title"><span data-i18n="card_agenda">Agenda</span></div>
+        <div class="agenda-flame" id="agendaFlame" role="img" hidden></div>
+        <div class="folio" id="agendaFolio" data-season="3">
+          <div class="folio-head">
+            <button type="button" class="folio-turn" data-h="h92" aria-label="Previous month" data-i18n-aria="tt_prevmonth">◀</button>
+            <div class="folio-title">
+              <div class="folio-titletext">
+                <div class="agenda-month-lbl folio-month" id="agendaMonthLbl"></div>
+              </div>
+            </div>
+            <button type="button" class="folio-turn" data-h="h93" aria-label="Next month" data-i18n-aria="tt_nextmonth">▶</button>
+          </div>
+          <div class="folio-leaf" id="folioLeaf">
+            <div class="agenda-cal-grid" id="agendaCalGrid"></div>
+          </div>
+          <div class="folio-foot">
+            <div class="folio-legend">
+              <span class="folio-leg"><i class="pip pip-log"></i><span data-i18n="cal_leg_log">Log</span></span>
+              <span class="folio-leg"><i class="pip pip-note"></i><span data-i18n="cal_leg_note">Note</span></span>
+              <span class="folio-leg"><b class="pip pip-rem">2</b><span data-i18n="cal_leg_rem">Reminders</span></span>
+              <span class="folio-leg"><i class="pip pip-star"></i><span data-i18n="cal_leg_deeds">Deeds done</span></span>
+            </div>
+            <button type="button" class="btn btn-sm folio-checkin" id="checkinOpenBtn" data-h="h94" aria-haspopup="dialog" data-i18n="tab_checkin_btn">📈 Check-in</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- START DATE/TIME MODAL -->
+<!-- SETS & REST MODAL -->
+<div class="modal-overlay" id="exSetsModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_setsrest">Sets &amp; Rest</div>
+
+    <div class="chip-row" id="exModeToggle" style="margin-bottom:14px;">
+      <button type="button" class="chip" data-mode="reps" data-h="h100" data-i18n="mode_reps">🔢 Reps</button>
+      <button type="button" class="chip" data-mode="time" data-h="h101" data-i18n="mode_time">⏱ Timed Hold</button>
+    </div>
+
+    <div class="modal-field" id="exSetsSection">
+      <label class="f-label" data-i18n="lbl_sets">Sets</label>
+      <div class="chip-row" id="exSetsChips">
+        <button type="button" class="chip" data-val="1" data-h="h240">1</button>
+        <button type="button" class="chip" data-val="2" data-h="h102">2</button>
+        <button type="button" class="chip" data-val="3" data-h="h103">3</button>
+        <button type="button" class="chip" data-val="4" data-h="h104">4</button>
+        <button type="button" class="chip" data-val="5" data-h="h105">5</button>
+        <button type="button" class="chip" data-val="6" data-h="h106">6</button>
+      </div>
+      <input type="number" id="exSetsInput" min="1" placeholder="e.g. 4" data-h="h107" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field" id="exRepsSection">
+      <label class="f-label" data-i18n="lbl_reps">Reps</label>
+      <div class="chip-row" id="exRepsChips">
+        <button type="button" class="chip" data-val="6-8" data-h="h108">6–8</button>
+        <button type="button" class="chip" data-val="8-10" data-h="h109">8–10</button>
+        <button type="button" class="chip" data-val="10-12" data-h="h110">10–12</button>
+        <button type="button" class="chip" data-val="12-15" data-h="h111">12–15</button>
+        <button type="button" class="chip" data-val="15-20" data-h="h112">15–20</button>
+        <button type="button" class="chip" data-val="AMRAP" data-h="h113">AMRAP</button>
+      </div>
+      <input type="text" id="exRepsInput" placeholder="e.g. 12-20 or AMRAP" data-i18n-ph="ph_reps" data-h="h114" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field" id="exTimeSection" style="display:none;">
+      <label class="f-label" data-i18n="lbl_holdsec">Hold Time (sec)</label>
+      <div class="chip-row" id="exHoldChips">
+        <button type="button" class="chip" data-val="15" data-h="h115">15s</button>
+        <button type="button" class="chip" data-val="20" data-h="h116">20s</button>
+        <button type="button" class="chip" data-val="30" data-h="h117">30s</button>
+        <button type="button" class="chip" data-val="45" data-h="h118">45s</button>
+        <button type="button" class="chip" data-val="60" data-h="h119">60s</button>
+        <button type="button" class="chip" data-val="90" data-h="h120">90s</button>
+      </div>
+      <input type="number" id="exHoldInput" min="1" placeholder="e.g. 30" data-h="h121" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_restsec">Rest (sec)</label>
+      <div class="chip-row" id="exRestChips">
+        <button type="button" class="chip" data-val="30" data-h="h122">30s</button>
+        <button type="button" class="chip" data-val="45" data-h="h123">45s</button>
+        <button type="button" class="chip" data-val="60" data-h="h124">60s</button>
+        <button type="button" class="chip" data-val="90" data-h="h125">90s</button>
+        <button type="button" class="chip" data-val="120" data-h="h126">120s</button>
+      </div>
+      <input type="number" id="exRestInput" min="0" placeholder="e.g. 45" data-h="h127" style="margin-top:8px;">
+    </div>
+
+    <div class="lock-sub" style="text-align:left;" data-i18n="hint_setsrest">Used by the Voice Coach timer in the Workout tab.</div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h128" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h129" data-i18n="btn_save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXERCISE LIBRARY MODAL -->
+<div class="modal-overlay" id="exLibraryModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_exlibrary_title">📚 Exercise Library</div>
+    <div class="chip-row exlib-cats" id="exLibraryCats"></div>
+    <div class="exlib-list" id="exLibraryList"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-block" data-h="h130" data-i18n="btn_cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM EXERCISE MODAL (add one that isn't in the library) -->
+<div class="modal-overlay" id="customExerciseModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="btn_addownexercise">✏️ Add Your Own Exercise</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_exercisename">Exercise Name</label>
+      <input type="text" id="customExNameInput" placeholder="e.g. Cossack Squat" data-i18n-ph="ph_customexname">
+    </div>
+    <div class="lock-sub" style="text-align:left;" data-i18n="hint_customexercise">Not in the library? No problem — type it in here and it's added to your day, just like a library pick.</div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h131" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h132" data-i18n="btn_addex">＋ Add Exercise</button>
+    </div>
+  </div>
+</div>
+
+<!-- WARM-UP LIBRARY MODAL -->
+<div class="modal-overlay" id="warmupLibraryModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_warmuplibrary_title">🔥 Warm-Up Library</div>
+    <div class="chip-row exlib-cats" id="warmupLibraryCats"></div>
+    <div class="exlib-list" id="warmupLibraryList"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost btn-block" data-h="h133" data-i18n="btn_cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- WARM-UP BUILDER MODAL (build your own, exercise by exercise) -->
+<div class="modal-overlay" id="warmupBuilderModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_warmupbuilder_title">🔥 Build Your Warm-up</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_warmupname">Warm-up Name</label>
+      <input type="text" id="wbNameInput" placeholder="e.g. My Warm-up" data-i18n-ph="ph_warmupnameinput">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_exercises_plural">Exercises</label>
+      <div id="wbBlockList"></div>
+      <button class="btn btn-block" style="margin-top:6px;" data-h="h134" data-i18n="btn_addex">+ Add Exercise</button>
+    </div>
+    <div class="lock-sub" style="text-align:left;" data-i18n="hint_warmupbuilder">Add one exercise at a time — jumping jacks, then something different — and pick each one's own time, sets and reps.</div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h135" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h136" data-i18n="btn_savewarmup">Save Warm-up</button>
+    </div>
+  </div>
+</div>
+
+<!-- WARM-UP BLOCK MODAL (a single exercise within the warm-up being built) -->
+<div class="modal-overlay" id="warmupBlockModal">
+  <div class="modal-box">
+    <div class="modal-title" id="wbBlockModalTitle" data-i18n="modal_addexercise_title">Add Exercise</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="st_exercise">Exercise</label>
+      <input type="text" id="wbBlockNameInput" placeholder="e.g. Jumping Jacks" data-i18n-ph="ph_wbblockname">
+      <div class="wb-quickpick" id="wbQuickPicks"></div>
+    </div>
+
+    <div class="chip-row" id="wbModeToggle" style="margin-bottom:14px;">
+      <button type="button" class="chip" data-mode="time" data-h="h137" data-i18n="mode_timeonly">⏱ Time only</button>
+      <button type="button" class="chip" data-mode="reps" data-h="h138" data-i18n="mode_reps">🔢 Reps</button>
+    </div>
+
+    <div class="modal-field" id="wbRepsSection" style="display:none;">
+      <label class="f-label" data-i18n="lbl_reps">Reps</label>
+      <div class="chip-row" id="wbRepsChips">
+        <button type="button" class="chip" data-val="10" data-h="h139">10</button>
+        <button type="button" class="chip" data-val="15" data-h="h140">15</button>
+        <button type="button" class="chip" data-val="20" data-h="h141">20</button>
+        <button type="button" class="chip" data-val="25" data-h="h142">25</button>
+        <button type="button" class="chip" data-val="30" data-h="h143">30</button>
+      </div>
+      <input type="text" id="wbRepsInput" placeholder="e.g. 20" data-h="h144" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_secondsperset">Seconds per Set</label>
+      <div class="chip-row" id="wbSecChips">
+        <button type="button" class="chip" data-val="15" data-h="h145">15s</button>
+        <button type="button" class="chip" data-val="20" data-h="h146">20s</button>
+        <button type="button" class="chip" data-val="30" data-h="h147">30s</button>
+        <button type="button" class="chip" data-val="45" data-h="h148">45s</button>
+        <button type="button" class="chip" data-val="60" data-h="h149">60s</button>
+        <button type="button" class="chip" data-val="90" data-h="h150">90s</button>
+      </div>
+      <input type="number" id="wbSecInput" min="1" placeholder="e.g. 30" data-h="h151" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_sets">Sets</label>
+      <div class="chip-row" id="wbSetsChips">
+        <button type="button" class="chip" data-val="1" data-h="h152">1</button>
+        <button type="button" class="chip" data-val="2" data-h="h153">2</button>
+        <button type="button" class="chip" data-val="3" data-h="h154">3</button>
+        <button type="button" class="chip" data-val="4" data-h="h155">4</button>
+        <button type="button" class="chip" data-val="5" data-h="h156">5</button>
+      </div>
+      <input type="number" id="wbSetsInput" min="1" placeholder="e.g. 2" data-h="h157" style="margin-top:8px;">
+    </div>
+
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_restbetweensets">Rest Between Sets (sec)</label>
+      <div class="chip-row" id="wbRestChips">
+        <button type="button" class="chip" data-val="0" data-h="h158">0s</button>
+        <button type="button" class="chip" data-val="10" data-h="h159">10s</button>
+        <button type="button" class="chip" data-val="15" data-h="h160">15s</button>
+        <button type="button" class="chip" data-val="20" data-h="h161">20s</button>
+        <button type="button" class="chip" data-val="30" data-h="h162">30s</button>
+      </div>
+      <input type="number" id="wbRestInput" min="0" placeholder="e.g. 15" data-h="h163" style="margin-top:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;" data-i18n="hint_restbetweensets">Only used when Sets is more than 1.</div>
+    </div>
+
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_restafterexercise">Rest After This Exercise (sec)</label>
+      <div class="chip-row" id="wbRestAfterChips">
+        <button type="button" class="chip" data-val="0" data-h="h164">0s</button>
+        <button type="button" class="chip" data-val="10" data-h="h165">10s</button>
+        <button type="button" class="chip" data-val="15" data-h="h166">15s</button>
+        <button type="button" class="chip" data-val="20" data-h="h167">20s</button>
+        <button type="button" class="chip" data-val="30" data-h="h168">30s</button>
+      </div>
+      <input type="number" id="wbRestAfterInput" min="0" placeholder="e.g. 15" data-h="h169" style="margin-top:8px;">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;" data-i18n="hint_restafterexercise">A short breather before moving on to the next warm-up exercise.</div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h170" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h171" data-i18n="btn_saveexercise">Save Exercise</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="startDateModal">
+  <div class="modal-box">
+    <div class="modal-title" data-i18n="modal_startdatetime">Edit Start Date &amp; Time</div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_date">Date</label>
+      <input type="date" id="startDateInput">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_time">Time</label>
+      <input type="time" id="startTimeInput">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" data-h="h182" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" data-h="h183" data-i18n="btn_save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGENDA ENTRY MODAL -->
+<div class="modal-overlay" id="agendaEntryModal">
+  <div class="modal-box modal-box-log">
+    <div class="modal-log-header">
+      <button class="modal-back-btn" data-h="h184" data-i18n-aria="tt_back" aria-label="Back">←</button>
+      <div class="modal-title" id="agendaEntryDateLbl">Datum</div>
+    </div>
+
+    <div class="ds-tabs" role="tablist" id="dsTabs">
+      <button type="button" class="ds-tab active" role="tab" id="dsTab-log" aria-selected="true" aria-controls="dsPane-log" data-action="dsTab" data-key="log"><span data-i18n="daytab_log">📜 Day Log</span></button>
+      <button type="button" class="ds-tab" role="tab" id="dsTab-reminders" aria-selected="false" aria-controls="dsPane-reminders" data-action="dsTab" data-key="reminders"><span data-i18n="daytab_reminders">🔔 Reminders</span><b class="ds-tab-count" id="dsTabRemCount"></b></button>
+      <button type="button" class="ds-tab" role="tab" id="dsTab-notes" aria-selected="false" aria-controls="dsPane-notes" data-action="dsTab" data-key="notes"><span data-i18n="daytab_notes">📝 Notes</span><i class="ds-tab-dot" id="dsTabNoteDot"></i></button>
+    </div>
+
+    <div class="ds-pane active" id="dsPane-log" role="tabpanel" aria-labelledby="dsTab-log">
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_sleep">Sleep (hours)</label>
+      <input type="number" id="entrySleep" step="0.5" min="0" placeholder="e.g. 7.5" data-h="h185">
+    </div>
+    <div class="modal-field">
+      <label class="f-label"><span data-i18n="lbl_water">Water</span> <span id="entryWaterCount" class="water-count-lbl-inline"></span></label>
+      <div class="water-row" id="entryWaterRow"></div>
+      <div class="water-cup-row" id="entryWaterCupRow"></div>
+      <button type="button" class="btn btn-ghost btn-sm" data-h="h186" data-i18n="btn_reset">↺ Reset</button>
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_measurements">Measurements</label>
+      <div class="field-grid" id="entryMeasureGrid"></div>
+    </div>
+    <div class="modal-field">
+      <label class="f-label" data-i18n="lbl_food">Food Eaten</label>
+      <div id="entryFoodList"></div>
+      <div class="add-row">
+        <input type="text" id="entryFoodInput" placeholder="Add food..." data-i18n-ph="ph_addfood" data-h="h187">
+        <button class="btn btn-sm" data-h="h188" data-i18n="btn_add">Add</button>
+      </div>
+    </div>
+    </div>
+
+    <div class="ds-pane" id="dsPane-reminders" role="tabpanel" aria-labelledby="dsTab-reminders">
+      <p class="ds-hint" id="dayRemHint"></p>
+      <button type="button" class="rem-health-link" id="remHealthLink" data-action="remHealthOpen" data-i18n="rh_link" hidden>Reminders late? Run the check</button>
+      <div class="rem-warn" data-rem-warn role="alert"><span data-i18n="rem_notif_off">Notifications are switched off for BeerSports, so reminders cannot ring.</span> <button type="button" class="btn btn-sm" data-action="remFixNotifications" data-i18n="rem_notif_fix">Turn on</button></div>
+      <div class="rem-list" id="dayRemList"></div>
+      <div class="rem-add">
+        <input type="text" id="dayRemText" maxlength="300" placeholder="Remind me to..." data-i18n-ph="rem_ph" data-enter="remAddInline" autocomplete="off">
+        <input type="time" id="dayRemTime" value="09:00" aria-label="Time" data-i18n-aria="rem_time" data-action="remTimeTouched">
+        <button type="button" class="btn btn-sm" data-action="remAddInline" data-i18n="btn_add">Add</button>
+      </div>
+      <div class="rem-sound-row"><button type="button" class="chip rem-sound-btn active" id="dayRemSoundBtn" aria-pressed="true" data-action="remInlineSound"></button></div>
+    </div>
+
+    <div class="ds-pane" id="dsPane-notes" role="tabpanel" aria-labelledby="dsTab-notes">
+      <p class="ds-hint" data-i18n="note_hint">A free page for this day. It never rings; reminders live in their own tab.</p>
+    <div class="modal-field">
+      <textarea id="agendaEntryText" rows="6" aria-labelledby="dsTab-notes" placeholder="Anything else about this day..." data-i18n-ph="ph_daynotes" data-h="h189"></textarea>
+    </div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-block" data-h="h190" data-i18n="btn_done">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER MODAL (new / edit one reminder) -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal-box">
+    <div class="modal-title" id="reminderModalTitle" data-i18n="rem_new">New reminder</div>
+    <div class="modal-field">
+      <label class="f-label" for="remDate" data-i18n="rem_day">Day</label>
+      <input type="date" id="remDate">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" for="remTime" data-i18n="rem_time">Time</label>
+      <input type="time" id="remTime" value="09:00">
+    </div>
+    <div class="modal-field">
+      <label class="f-label" for="remText" data-i18n="rem_what">Remind me to</label>
+      <textarea id="remText" rows="3" maxlength="300" placeholder="e.g. Call the dentist" data-i18n-ph="rem_ph_long"></textarea>
+    </div>
+    <div class="modal-field rem-sound-row">
+      <button type="button" class="chip rem-sound-btn active" id="remSoundBtn" aria-pressed="true" data-action="remSoundToggle"></button>
+      <div class="rem-sound-hint" data-i18n="rem_sound_hint">Off: the reminder still pops up, but makes no sound.</div>
+    </div>
+    <div class="modal-btns">
+      <button type="button" class="btn btn-block" data-action="remSave" data-i18n="btn_save">Save</button>
+      <button type="button" class="btn btn-ghost btn-block btn-danger" id="remDeleteBtn" data-action="remDelete" data-i18n="rem_delete">Delete reminder</button>
+      <button type="button" class="btn btn-ghost btn-block" data-action="remCancel" data-i18n="btn_cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TODO ══════════════ -->
+<!-- Since 1.5.2 this page is ONE card, the Daily To-Do, always open (no board, no drop-down). Its tasks are of two kinds: "Every day"
+     tasks reset each morning and can have their own days and reminder times; "Just once" tasks (task.once) stay until they are
+     ticked and are gone the day after. The old To-Do board is gone: its open tasks became "Just once" tasks (dqNormalizeState). -->
+<div class="page" id="page-todo">
+  <div class="bs-notify-banner" data-bsn-banner hidden></div>
+  <div class="card wide-card" id="dailyTodoCard">
+    <div class="card-title"><span data-i18n="card_dailytodo">📅 Daily To-Do</span> <small id="dailyTodoCount"></small></div>
+    <div class="add-row" style="margin-bottom:10px;">
+      <input type="text" id="dailyTodoInput" maxlength="120" autocomplete="off" placeholder="Add a task..." data-i18n-ph="ph_adddailytask" data-h="h250">
+      <button class="btn btn-sm" data-h="h251" data-i18n="btn_add">Add</button>
+    </div>
+    <div class="chip-row dt-mode dt-kind" id="dtKind" role="group" aria-label="How often" data-i18n-aria="dt_kind_aria">
+      <button type="button" class="chip active" data-action="dtKind" data-key="daily" aria-pressed="true" data-i18n="dt_mode_every">Every day</button>
+      <button type="button" class="chip" data-action="dtKind" data-key="once" aria-pressed="false" data-i18n="dt_mode_once">Just once</button>
+    </div>
+    <div id="dailyTodoList"></div>
+    <div class="check-hint" data-i18n="hint_dailytodo">Every-day tasks reset each morning. Tap ✏️ on a task to change it: how important it is (Must do first), its days or a rhythm, and reminders. A just-once task stays until you tick it and is gone the day after.</div>
+  </div>
+</div>
+
+<!-- ══════════════ TIMERS ══════════════ -->
+<!-- The Voice Coach, in two looks (CSS reads data-lt on #timerView-lifting): BEFORE you start it shows your workout - the
+     program, the day buttons, one big Start and the exercises; WHILE you train it shows only what is happening now. -->
+<div class="page" id="page-timers">
+
+  <div id="timerView-lifting" data-lt="idle" data-can="1">
+  <div class="card vc-card" id="vcCard">
+    <div class="card-title" data-i18n="card_lifting">🔊 Voice Coach</div>
+
+    <div class="vc-plan-head vc-idle-only">
+      <div class="vc-plan-name" id="vcPlanName"></div>
+      <button type="button" class="btn btn-ghost btn-sm vc-change" id="ltOptionsToggleBtn" data-h="h255" aria-haspopup="dialog" aria-controls="ltOptionsModal" aria-expanded="false" data-i18n="btn_vcchange">Change</button>
+    </div>
+    <div class="vc-days vc-idle-only" id="vcDays" role="group" aria-label="Day of the workout" data-i18n-aria="vc_days_aria"></div>
+
+    <div class="timer-gauge vc-now" data-phase="idle">
+      <div class="ring-phase" id="ltPhase" data-i18n="st_ready">Ready</div>
+      <div class="vc-exname" id="ltExerciseNow"></div>
+      <div class="vc-meta"><span class="ring-round" id="ltSetLbl"></span><span class="ring-reps" id="ltRepsLbl"></span></div>
+      <div class="ring-time-row">
+        <button type="button" class="ring-adjust-btn" id="ltRestMinus" data-h="h248" style="display:none;" aria-label="-10s" data-i18n-aria="tt_restminus">−</button>
+        <div class="ring-time" id="ltTime">--</div>
+        <button type="button" class="ring-adjust-btn" id="ltRestPlus" data-h="h249" style="display:none;" aria-label="+10s" data-i18n-aria="tt_restplus">＋</button>
+      </div>
+      <div class="timer-bar-track"><div class="timer-bar-fill" id="ltBarFill"></div></div>
+    </div>
+
+    <div class="vc-actions">
+      <button type="button" class="btn vc-go vc-start" id="ltStartBtn" data-h="h210" data-i18n="btn_vcstart">▶ Start workout</button>
+      <button type="button" class="btn vc-go vc-done" id="ltDoneBtn" data-h="h209" data-i18n="btn_donewithset">✓ Done with this set</button>
+      <button type="button" class="btn btn-ghost vc-skip" id="ltSkipBtn" data-h="h211" data-i18n="btn_skip">⏭ Skip</button>
+      <button type="button" class="vc-stop" id="ltStopBtn" data-h="h212" data-i18n="btn_vcstop">Stop</button>
+    </div>
+
+    <div class="vc-list vc-idle-only" id="vcList"></div>
+    <div class="vc-unsupported" id="ltUnsupportedNote" style="display:none;"></div>
+  </div>
+
+  <button type="button" class="btn btn-ghost btn-block vc-edit vc-idle-only" id="programEditOpenBtn" data-h="h265" aria-haspopup="dialog" aria-controls="programEditModal" aria-expanded="false" data-i18n="btn_editprogram2">✏️ Edit your program</button>
+  </div>
+</div>
+
+
+<button class="back-to-top" id="backToTopBtn" data-h="h233" data-i18n-aria="tt_backtotop" aria-label="Back to top">↑</button>
+
+<div class="subview-backdrop" id="subviewBackdrop" data-h="h234"></div>
+
+<script src="features-i18n.js"></script>
+<script src="features-core.js"></script>
+<script src="nutrition-core.js"></script>
+<script src="cyberpunk-icons.js"></script>
+<script src="medieval.js"></script>
+<script src="app-en.js"></script>
+<script src="mobile-fix.js"></script>
+<script src="notify.js"></script>
+
+</body>
+</html>

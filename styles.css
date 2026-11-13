@@ -1,0 +1,269 @@
+/* =========================================================
+   Beerleert — shared stylesheet for index.html and the
+   Islam / Health & Lifestyle / Art category pages.
+   (Not used by the BeerleertSports app — that has its own
+   stylesheet, stylese.css.)
+   ========================================================= */
+
+:root{
+  --bg:#11151b;
+  --surface:#171d25;
+  --card:#1e2630;
+  --border:#2c3542;
+  --text:#eef1f5;
+  --muted:#7c8a9a;
+  --accent:#ff8c42;
+  --accent-dim:rgba(255,140,66,0.14);
+  --accent-glow:rgba(255,140,66,0.55);
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+html,body{height:100%;}
+body{
+  background:radial-gradient(circle at 50% -10%, var(--surface), var(--bg) 60%);
+  color:var(--text);
+  font-family:var(--font);
+  line-height:1.5;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block;}
+a{color:inherit;text-decoration:none;}
+h1,h2,h3{font-family:var(--font);}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+/* ── Page shell ─────────────────────────────────────────── */
+.page{width:100%;}
+.container{max-width:960px;margin:0 auto;padding:28px 20px 88px;}
+
+/* ── Hero (index.html) ───────────────────────────────────── */
+.hero{text-align:center;padding:44px 0 10px;}
+.bob{position:relative;display:inline-block;animation:bob 3.6s ease-in-out infinite;}
+.bob h2{
+  font-size:clamp(38px,9vw,62px);
+  font-weight:800;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  line-height:1;
+}
+.bob h2:first-child{position:relative;z-index:2;color:var(--text);}
+.bob h2:last-child{
+  position:absolute;inset:0;z-index:1;
+  color:var(--accent);
+  filter:blur(16px);
+  opacity:.5;
+  transform:translateY(6px);
+}
+.hero-tagline{
+  margin:20px auto 0;
+  max-width:520px;
+  color:var(--muted);
+  font-size:14.5px;
+}
+
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+/* ── Sections ─────────────────────────────────────────────── */
+.section{margin-top:38px;}
+.section + .section{margin-top:44px;}
+.section h2{
+  font-size:12.5px;
+  font-weight:700;
+  letter-spacing:2.2px;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:16px;
+}
+
+/* ── Category grid (index.html) ──────────────────────────── */
+.category-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:16px;
+}
+.category-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.category-card:hover{
+  border-color:var(--accent);
+  transform:translateY(-3px);
+  box-shadow:0 14px 30px -18px var(--accent-glow);
+}
+.category-card h3{font-size:18px;font-weight:700;}
+.category-links{display:flex;flex-wrap:wrap;gap:10px;}
+.chip-link{
+  display:inline-flex;align-items:center;gap:7px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:8px 14px;
+  font-size:12.5px;
+  font-weight:600;
+  transition:border-color .15s ease, color .15s ease;
+}
+.chip-link img{width:16px;height:16px;border-radius:3px;object-fit:cover;}
+.chip-link:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Whole-card link variant (Beersports banner card) */
+.category-card--link{
+  padding:0;
+  overflow:hidden;
+  gap:0;
+  min-height:170px;
+  justify-content:flex-end;
+}
+.category-card--link .category-banner{
+  width:100%;
+  height:150px;
+  object-fit:cover;
+}
+.category-card--link h3{padding:14px 18px 18px;}
+
+/* ── Sub-page header (Islam / Health & Lifestyle / Art) ──── */
+.page-head{
+  position:relative;
+  padding-top:4px;
+  margin-bottom:6px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.home-brand{
+  align-self:flex-start;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 4px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:600;
+  transition:color .15s ease, transform .15s ease;
+}
+.home-brand svg{width:18px;height:18px;}
+.home-brand:hover{color:var(--accent);transform:translateX(-2px);}
+.page-head h1{
+  font-size:clamp(22px,5vw,30px);
+  font-weight:800;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.tabs a{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;
+  border-radius:999px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--muted);
+  transition:border-color .15s ease, color .15s ease, background .15s ease;
+}
+.tabs a img{width:15px;height:15px;object-fit:contain;}
+.tabs a:hover{color:var(--text);border-color:var(--accent);}
+.tabs a[aria-current="page"]{
+  color:var(--accent);
+  border-color:var(--accent);
+  background:var(--accent-dim);
+}
+
+/* ── Resource grid (link tiles on sub-pages) ─────────────── */
+.resource-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(98px,1fr));
+  gap:14px;
+}
+.resource-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:9px;
+  text-align:center;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px 10px;
+  transition:border-color .15s ease, transform .15s ease, background .15s ease;
+}
+.resource-card img{
+  width:44px;height:44px;
+  border-radius:10px;
+  object-fit:cover;
+}
+.resource-card span{
+  font-size:11.5px;
+  font-weight:600;
+  line-height:1.3;
+}
+.resource-card:hover{
+  border-color:var(--accent);
+  background:var(--card);
+  transform:translateY(-3px);
+}
+
+/* ── Feature block (embedded video / iframe) ─────────────── */
+.feature{
+  margin-top:28px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+}
+.feature h3{font-size:15px;font-weight:700;line-height:1.4;margin-bottom:14px;}
+.embed-frame{
+  position:relative;
+  width:100%;
+  padding-top:56.25%;
+  border-radius:12px;
+  overflow:hidden;
+  background:#000;
+}
+.embed-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.feature video{
+  width:100%;
+  border-radius:12px;
+  display:block;
+  margin-top:6px;
+  background:#000;
+}
+
+/* ── Back-to-top button ──────────────────────────────────── */
+.to-top{
+  position:fixed;
+  right:20px;bottom:20px;
+  width:46px;height:46px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--card);
+  border:1px solid var(--border);
+  color:var(--muted);
+  z-index:20;
+  transition:border-color .15s ease, color .15s ease, transform .15s ease;
+}
+.to-top svg{width:20px;height:20px;}
+.to-top:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width:640px){
+  .container{padding:22px 16px 76px;}
+  .category-grid{grid-template-columns:1fr;}
+  .resource-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr));}
+  .page-head{gap:14px;}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+  .tabs::-webkit-scrollbar{display:none;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .bob{animation:none;}
+  .category-card,.resource-card,.to-top,.home-brand{transition:none;}
+}

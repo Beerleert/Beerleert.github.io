@@ -1,0 +1,535 @@
+/* ═════════════════════════════════════════════════════════════════════
+   BeerSports - styles for the 1.2.0 features, in the medieval look of medieval.css (loaded before this):
+
+     1. the calendar: a "Book of Hours" page - season colour, red-letter Sundays, a wax seal on today
+     2. the day sheet: tabs for Day Log / Reminders / Notes
+     3. reminders: the rows in a day and the "notifications are off" notice
+     4. the Daily To-Do tracker: a short card on the Check-in page and its page of its own - progress forever, the roll of days
+        (wax seals, month by month), what happened on a day, every task
+
+   No colour-mix(), no new fonts or images: it uses the variables and ornaments medieval.css already has.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ══════════ 1. THE CALENDAR ══════════ */
+.folio{
+  --season:#27478a; --season-soft:rgba(39,71,138,.16);   /* winter: lapis */
+  position:relative;margin-top:2px;
+}
+.folio[data-season="1"]{--season:#386b2a;--season-soft:rgba(56,107,42,.17)}    /* spring: vert */
+.folio[data-season="2"]{--season:#8a6410;--season-soft:rgba(201,162,74,.30)}    /* summer: gilt */
+.folio[data-season="3"]{--season:#a02f18;--season-soft:rgba(160,47,24,.15)}     /* autumn: rubric */
+
+.folio-head{display:flex;align-items:center;gap:6px;margin:0 0 10px}
+.folio-turn{
+  flex:none;width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  border-radius:50%;color:var(--ink);font-size:14px;
+  background:radial-gradient(circle at 35% 28%,#fff0b8,#d9b24c 55%,#8a6a28);
+  border:1.5px solid #5a4010;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 2px 0 #3a2a0a,0 4px 6px rgba(0,0,0,.3);
+  transition:transform .08s,box-shadow .08s;
+}
+.folio-turn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 0 0 #3a2a0a,0 1px 2px rgba(0,0,0,.3)}
+.folio-turn .ico{width:15px;height:15px;--ia:var(--ink)}
+
+.folio-title{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px}
+.folio-titletext{min-width:0;text-align:center}
+.folio .folio-month{
+  flex:none;margin:0;font-family:var(--font-display);font-weight:400;font-size:31px;line-height:1.02;letter-spacing:0;
+  text-transform:none;color:var(--ink);text-align:center;white-space:nowrap;
+}
+.folio .folio-month::first-letter{color:var(--season);text-transform:uppercase}   /* the rubricated initial: always a capital, even for Dutch month names */
+.folio-year{
+  margin-inline-start:7px;font-family:var(--font-body);font-style:italic;font-weight:400;font-size:14px;letter-spacing:.03em;
+  color:var(--ink-faint);vertical-align:.5em;
+}
+
+/* the page itself: a ruled leaf in a thin gilt frame */
+.folio-leaf{
+  position:relative;padding:6px 3px 2px;
+  border:8px solid transparent;border-image:url(img/frame-inner.svg) 8 / 8px stretch;
+  background:linear-gradient(180deg,rgba(255,250,228,.55),rgba(255,248,222,.25)),var(--vellum-hi);
+  box-shadow:inset 0 0 22px rgba(112,72,20,.16);
+}
+.folio .agenda-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
+.folio .acal-dow{
+  padding:2px 0 6px;font-family:var(--font-body);font-style:italic;font-weight:700;font-size:12.5px;letter-spacing:.05em;
+  text-transform:none;text-align:center;color:var(--ink-soft);border-bottom:1.5px solid rgba(138,106,40,.6);
+}
+.folio .acal-dow.sun{color:var(--rubric)}
+.folio .acal-cell{
+  position:relative;aspect-ratio:auto;min-height:56px;padding:9px 0 3px;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  font-family:var(--font-body);font-size:16px;color:var(--ink);text-align:center;cursor:pointer;
+  background:none;border:0;border-radius:0;box-shadow:none;
+  border-bottom:1px solid rgba(138,106,40,.36);border-inline-end:1px solid rgba(138,106,40,.22);
+  transition:background .12s;-webkit-tap-highlight-color:transparent;
+}
+.folio .acal-cell:nth-child(7n){border-inline-end:0}
+.folio .acal-cell::after{content:none}                        /* the old check-mark badge */
+.folio .acal-cell:hover{transform:none;background:rgba(181,138,44,.16);border-color:rgba(138,106,40,.36)}
+.folio .acal-cell:active{transform:none;background:rgba(181,138,44,.28)}
+.folio .acal-cell.empty{background:none;cursor:default;pointer-events:none}
+.folio .acal-cell.has-note{background:none;border-color:rgba(138,106,40,.36)}
+.folio .acal-cell:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;z-index:2}
+
+.folio .acal-num{position:relative;z-index:1;font-weight:700;font-size:18px;line-height:20px;color:var(--ink);font-variant-numeric:lining-nums}
+.folio .acal-cell.past .acal-num{color:var(--ink-soft);font-weight:400}
+.folio .acal-cell.sun .acal-num{color:var(--rubric)}           /* red-letter days */
+.folio .acal-cell.sun.past .acal-num{color:#8a4a38}
+
+/* today: a seal of poured wax, pressed on the date */
+.folio .acal-cell.today{background:none}
+.folio .acal-cell.today::before{
+  content:"";position:absolute;left:50%;top:1px;width:35px;height:33px;margin-left:-17.5px;transform:rotate(-6deg);
+  border-radius:48% 52% 50% 50% / 55% 45% 56% 44%;
+  background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.40),rgba(255,255,255,0) 46%),var(--accent);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),inset 0 0 0 4px rgba(255,255,255,.12),0 2px 3px rgba(0,0,0,.5);
+}
+.folio .acal-cell.today .acal-num{color:#faf0cf;font-weight:700;text-shadow:0 1px 0 rgba(0,0,0,.5)}
+
+/* the foot of a day: what is in it */
+.folio .acal-pips{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:3px;min-height:12px;padding-top:2px}
+.pip{display:inline-block;flex:none;font-style:normal;box-sizing:border-box}
+.pip-log{width:6px;height:6px;border-radius:50%;background:var(--verdigris);box-shadow:0 0 0 1px rgba(255,250,228,.7)}
+.pip-note{width:6px;height:6px;background:var(--lapis);transform:rotate(45deg);box-shadow:0 0 0 1px rgba(255,250,228,.6)}
+.pip-star{width:10px;height:10px;background:var(--gilt);clip-path:polygon(50% 0,62% 36%,99% 36%,69% 58%,80% 94%,50% 72%,20% 94%,31% 58%,1% 36%,38% 36%)}
+.pip-rem{
+  min-width:13px;height:13px;padding:0 3px;border-radius:7px;font-size:9.5px;font-weight:700;line-height:13px;text-align:center;
+  color:#3a2a0a;background:linear-gradient(180deg,#f6e19a,#c9a24a);box-shadow:inset 0 0 0 1px rgba(108,80,24,.75);
+}
+.folio .acal-cell.today .pip-log,.folio .acal-cell.today .pip-note{box-shadow:0 0 0 1px rgba(255,250,228,.9)}
+
+/* turning the page */
+.folio-leaf.turn-next{animation:leafNext .34s ease both;transform-origin:0 50%}
+.folio-leaf.turn-prev{animation:leafPrev .34s ease both;transform-origin:100% 50%}
+@keyframes leafNext{from{opacity:0;transform:perspective(900px) rotateY(-14deg) translateX(16px)}to{opacity:1;transform:none}}
+@keyframes leafPrev{from{opacity:0;transform:perspective(900px) rotateY(14deg) translateX(-16px)}to{opacity:1;transform:none}}
+
+.folio-foot{display:flex;align-items:center;justify-content:space-between;gap:8px 10px;flex-wrap:wrap;margin-top:12px}
+.folio-legend{display:flex;flex-wrap:wrap;gap:4px 12px;flex:1;min-width:0;font-style:italic;font-size:12.5px;color:var(--ink-soft)}
+.folio-leg{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.folio-today,.folio-checkin{flex:none}
+.folio-today{min-width:84px}
+.folio-checkin{min-width:116px}   /* the Check-in button at the foot of the Agenda calendar (it replaced the Today button) */
+
+/* ══════════ 2. THE DAY SHEET ══════════ */
+.modal-log-header .modal-title{line-height:1}
+.modal-title .dl-main{display:block;font-size:31px;line-height:1.05}
+.modal-title .dl-sub{display:block;margin-top:3px;font-family:var(--font-body);font-style:italic;font-size:14px;letter-spacing:.05em;color:var(--ink-soft)}
+
+.ds-tabs{display:flex;gap:5px;margin:0 0 14px;padding:0 1px;border-bottom:2px solid rgba(138,106,40,.6)}
+/* The three tabs of the day sheet are ~100px wide on a phone, and "Herinneringen" with an icon and a count does not fit in a
+   row: so each tab is an index tab - the icon above the name - and the count badge / note dot sit on its top corner. */
+.ds-tab{
+  position:relative;flex:1 1 0;min-width:0;margin-bottom:-2px;padding:7px 2px 6px;line-height:1.1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;white-space:nowrap;cursor:pointer;
+  font-family:var(--font-body);font-weight:700;font-size:13.5px;letter-spacing:0;color:var(--ink-soft);
+  background:linear-gradient(180deg,#e8d6a6,#d2bb82);border:1px solid #8a6a28;border-bottom:0;border-radius:8px 8px 0 0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+}
+.ds-tab:hover{color:var(--accent-ink)}
+.ds-tab.active{
+  z-index:1;padding-bottom:8px;color:var(--accent-ink);
+  background:var(--vellum-hi);border-bottom:2px solid var(--vellum-hi);
+  box-shadow:inset 0 3px 0 var(--gilt-mid),inset 0 1px 0 rgba(255,255,255,.7);
+}
+.ds-tab > span{display:flex;flex-direction:column;align-items:center;gap:3px;max-width:100%}
+.ds-tab .ico{width:1.35em;height:1.35em;color:var(--ink);--ia:var(--gilt-mid)}
+.ds-tab-count{
+  position:absolute;top:3px;right:4px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:9px;box-sizing:border-box;
+  font-size:10.5px;font-weight:700;line-height:16px;text-align:center;color:var(--on-accent);background:var(--accent);
+  box-shadow:inset 0 0 0 1px rgba(50,8,0,.45);
+}
+.ds-tab-count:empty{display:none}
+.ds-tab-dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--lapis);display:block;box-shadow:0 0 0 1px rgba(255,250,228,.8)}   /* shown unless the page script hides it (a day without a note) */
+.ds-pane{display:none}
+.ds-pane.active{display:block;animation:paneIn .18s ease both}
+@keyframes paneIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ds-hint{margin:0 0 12px;font-style:italic;font-size:14.5px;line-height:1.4;color:var(--muted)}
+#dsPane-notes textarea{min-height:170px;line-height:1.5;font-size:16.5px}
+
+/* ══════════ 3. REMINDERS ══════════ */
+.rem-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.rem-item{
+  position:relative;display:flex;align-items:stretch;
+  color:var(--ink);background:var(--vellum-hi);border:1px solid #a98a52;border-radius:3px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 0 14px rgba(112,72,20,.10),0 2px 0 rgba(90,60,15,.32);
+}
+.rem-check{
+  position:relative;flex:none;width:46px;padding:0;display:flex;align-items:center;justify-content:center;
+  background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.rem-check::before{
+  content:"";display:block;width:25px;height:25px;border-radius:50%;box-sizing:border-box;
+  border:2px solid #6c5018;background:linear-gradient(180deg,#e4d1a0,#f1e4be);
+  box-shadow:inset 0 2px 3px rgba(90,60,15,.4),0 1px 0 rgba(255,255,255,.5);
+  transition:background .15s,border-color .15s;
+}
+.rem-check:hover::before{border-color:var(--verdigris)}
+.rem-item.done .rem-check::before{
+  border-color:#1f3d17;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.35),rgba(255,255,255,0) 50%),var(--vert);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),0 2px 3px rgba(0,0,0,.4);
+}
+.rem-item.done .rem-check::after{
+  content:"";position:absolute;left:50%;top:50%;width:6px;height:11px;margin:-7px 0 0 -3px;
+  border:solid #faf0cf;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);
+}
+.rem-main{
+  flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:9px 4px 9px 0;cursor:pointer;
+  text-align:start;font-family:var(--font-body);color:var(--ink);background:none;border:0;
+}
+.rem-time{
+  flex:none;padding:2px 8px;font-size:15px;font-weight:700;letter-spacing:.02em;font-variant-numeric:lining-nums tabular-nums;
+  background:linear-gradient(180deg,#f6ebcb,#dcc794);border:1px solid #8a6a28;border-radius:4px 7px 4px 7px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 0 rgba(90,60,15,.5);
+}
+.rem-text{flex:1;min-width:0;font-size:16px;line-height:1.3;overflow-wrap:anywhere}
+.rem-del{
+  flex:none;width:40px;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:#9b1c1c;background:none;border:0;opacity:.75;font-size:16px;
+}
+.rem-del:hover{opacity:1}
+.rem-del .ico{width:1.05em;height:1.05em}
+.rem-item.overdue .rem-time{color:var(--rubric);border-color:var(--rubric)}
+.rem-item.done{background:var(--vellum-lo);border-color:rgba(56,107,42,.6)}
+.rem-item.done .rem-text{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(108,80,24,.55)}
+.rem-item.done .rem-time{opacity:.6}
+.rem-empty{padding:6px 2px 10px}
+
+/* what to remember on its own full-width line, then the time and the Add button underneath: it fits a 360px phone with a 12-hour clock */
+.rem-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.rem-add input[type=text]{grid-column:1 / -1;min-width:0;min-height:46px;padding:9px 11px;font-size:16px}
+.rem-add input[type=time]{min-width:0;min-height:46px;padding:9px 10px;font-size:16px;text-align:center}
+.rem-add .btn{min-width:92px}
+.rem-add input.invalid{border-color:var(--red);box-shadow:0 0 0 2px rgba(155,28,28,.28),inset 0 2px 4px rgba(90,60,15,.3)}
+
+/* "notifications are off" notice: only the Android build ever shows it (tools/android-shim.js adds .on) */
+.rem-warn{display:none;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:0 0 12px;padding:9px 12px;
+  font-size:14.5px;line-height:1.35;color:var(--ink);background:linear-gradient(0deg,rgba(160,47,24,.10),rgba(160,47,24,.10)),var(--vellum-hi);
+  border:1px solid var(--rubric);border-radius:3px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.rem-warn.on{display:flex}
+.rem-warn span{flex:1 1 200px;min-width:0}
+.rem-warn .btn{flex:none}
+
+/* ══════════ 4. THE DAILY TO-DO TRACKER ══════════
+   A short card on the Check-in page, and the whole record - forever - on a page of its own (#dqModal, .sheet-page). */
+.dq-lede{margin:0 0 12px;font-style:italic;font-size:15px;line-height:1.4;color:var(--muted)}
+
+/* "Progress, forever": the share of every task that was ever done - a big figure and a bar, no 7/30/90-day window */
+.dq-forever{margin:0 0 14px}
+.dq-forever-top{display:flex;align-items:baseline;gap:12px}
+.dq-forever-pct{
+  flex:none;font-family:var(--font-display);font-weight:400;font-size:46px;line-height:.95;letter-spacing:0;
+  color:var(--accent-ink);font-variant-numeric:lining-nums;text-shadow:0 1px 0 rgba(255,255,255,.5);
+}
+.dq-forever-lab{flex:1;min-width:0;font-style:italic;font-size:15px;line-height:1.25;color:var(--ink-soft)}
+.dq-meter{margin-top:11px}
+.dq-forever-sub{margin-top:7px;font-style:italic;font-size:13.5px;line-height:1.3;color:var(--ink-faint)}
+.dq-forever-big{margin-bottom:16px}
+.dq-forever-big .dq-forever-pct{font-size:58px}
+.dq-forever-big .dq-meter{--bar-h:30px;margin-top:13px}
+.dq-open-btn{margin-top:2px}
+
+.dq-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.dq-stat{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 3px 7px;text-align:center;
+  background:linear-gradient(180deg,#f6ebcb,#e4d1a0);border:1.5px solid #8a6a28;border-radius:5px 9px 6px 10px / 9px 5px 10px 6px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),inset 0 0 0 2px rgba(240,217,138,.4),0 2px 0 #6c5018,0 4px 6px rgba(0,0,0,.2);
+}
+.dq-stat .ico{width:21px;height:21px;margin-bottom:1px;color:var(--ink);--ia:var(--gilt-mid)}
+.dq-stat b{font-size:24px;line-height:1.1;font-weight:700;color:var(--ink);font-variant-numeric:lining-nums}
+.dq-stat small{font-style:italic;font-size:11.5px;line-height:1.15;color:var(--ink-soft)}
+.dq-stat.lit .ico{color:var(--rubric);--ia:#e8892f}
+.dq-stat.lit b{color:var(--accent-ink)}
+.dq-hero-card .dq-stats{margin-bottom:2px}
+.dq-empty{display:flex;align-items:center;gap:12px;padding:4px 2px 8px;grid-column:1 / -1}
+.dq-empty .ico{flex:none;width:32px;height:32px;color:var(--ink-faint);--ia:var(--gilt-mid)}
+.dq-nothing .dq-stats{display:block;margin-bottom:6px}
+.dq-card.dq-nothing .dq-forever,.dq-card.dq-nothing .dq-open-btn{display:none}
+.sheet-page.dq-nothing .sheet-card:not(.dq-hero-card){display:none}
+
+/* the roll of days: one month at a time, one wax seal for every day, a week to a row */
+.dq-leaf{padding:8px 4px 6px}
+.dq-dow,.dq-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px 2px;align-items:center}
+.dq-dow{margin-bottom:9px;padding-bottom:6px;border-bottom:1.5px solid rgba(138,106,40,.6);font-style:italic;font-weight:700;font-size:12.5px;letter-spacing:.05em;text-align:center;color:var(--ink-soft)}
+.dq-dow .sun{color:var(--rubric)}
+.dq-cell{
+  position:relative;display:flex;align-items:center;justify-content:center;width:100%;max-width:42px;aspect-ratio:1;margin:0 auto;padding:0;
+  font-family:var(--font-body);font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer;
+  background:none;border:0;border-radius:50%;-webkit-tap-highlight-color:transparent;
+}
+.dq-cell.blank{visibility:hidden;pointer-events:none}
+.dq-cell.future{color:var(--ink-faint);font-weight:400;opacity:.5;cursor:default;pointer-events:none}
+.dq-cell.s-none,.dq-dot.s-none{border:1.5px dotted rgba(138,106,40,.55);color:var(--ink-faint);font-weight:400}
+.dq-cell.s-zero,.dq-dot.s-zero{border:1.5px solid #a98a52;color:var(--ink-soft);background:rgba(255,255,255,.2)}
+.dq-cell.s-some,.dq-dot.s-some{
+  color:var(--ink);
+  background:radial-gradient(circle closest-side,var(--vellum-hi) 71%,rgba(0,0,0,0) 73%),conic-gradient(var(--accent) calc(var(--p,50) * 1%),rgba(138,106,40,.38) 0);
+}
+.dq-cell.s-all,.dq-dot.s-all{
+  color:#fbeec8;text-shadow:0 1px 0 rgba(0,0,0,.5);border-radius:49% 51% 50% 50% / 52% 48% 52% 48%;
+  background:radial-gradient(circle at 33% 27%,rgba(255,255,255,.36),rgba(255,255,255,0) 46%),var(--accent);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.16),inset 0 0 0 4px rgba(255,255,255,.12),0 2px 3px rgba(0,0,0,.45);
+}
+.dq-cell.today{outline:2px solid var(--gilt);outline-offset:2px}
+.dq-cell.sel::after{content:"";position:absolute;left:18%;right:18%;bottom:-7px;height:3px;border-radius:2px;background:var(--ink)}
+.dq-cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dq-cell:active{transform:scale(.92)}
+.folio-turn:disabled{opacity:.35;cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 1px 0 #3a2a0a}
+.folio-today:disabled{opacity:.5}
+
+.dq-legend{display:flex;flex-wrap:wrap;align-items:center;gap:5px 13px;flex:1;min-width:0;margin:0;font-style:italic;font-size:12.5px;color:var(--ink-soft)}
+.dq-leg{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.dq-dot{display:inline-block;width:14px;height:14px;border-radius:50%;box-sizing:border-box}
+.dq-dot.s-all{box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.2),0 1px 2px rgba(0,0,0,.4)}
+.dq-dot.today{border:2px solid var(--gilt);background:none}
+
+/* what happened on the chosen day */
+.dq-day{
+  margin-top:16px;padding:10px 12px 8px;color:var(--ink);background:var(--vellum-hi);border:1px solid #a98a52;border-radius:3px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 0 14px rgba(112,72,20,.10),0 2px 0 rgba(90,60,15,.32);
+}
+.dq-day-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px}
+.dq-day-head b{font-family:var(--font-display);font-weight:400;font-size:22px;line-height:1.1;color:var(--accent-ink)}
+.dq-day-head span{flex:none;font-style:italic;font-size:14px;color:var(--ink-soft)}
+.dq-day-empty{padding:4px 0 4px;font-style:italic;font-size:15px;color:var(--ink-faint)}
+.dq-day-list{list-style:none;margin:0;padding:0}
+.dq-day-list li{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dotted rgba(138,106,40,.5)}
+.dq-day-list li:first-child{border-top:0}
+.dq-day-mark{
+  flex:none;width:21px;height:21px;display:flex;align-items:center;justify-content:center;border-radius:50%;box-sizing:border-box;
+  border:1.5px solid #8a6a28;background:linear-gradient(180deg,#e4d1a0,#f1e4be);box-shadow:inset 0 1px 2px rgba(90,60,15,.4);
+}
+.dq-day-list li.done .dq-day-mark{
+  color:#faf0cf;border-color:#1f3d17;
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.35),rgba(255,255,255,0) 50%),var(--vert);box-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.dq-day-mark .ico{width:13px;height:13px;--ia:#faf0cf}
+.dq-day-name{flex:1;min-width:0;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.dq-day-list li.gone .dq-day-name,.dq-deed.gone .dq-deed-name{font-style:italic;color:var(--ink-soft)}
+.dq-day-list em,.dq-deed em{flex:none;font-size:12px;font-style:italic;font-weight:400;color:var(--ink-faint)}
+
+/* every task on its own */
+.dq-deed{padding:10px 0 11px;border-top:1px dotted rgba(138,106,40,.55)}
+.dq-deeds .dq-deed:first-child{border-top:0}
+.dq-deed-name{font-size:16.5px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.dq-deed-meta{display:flex;align-items:center;gap:10px;margin-top:6px}
+.dq-strip{display:flex;align-items:center;gap:4px}
+.dq-pip{display:inline-block;width:13px;height:13px;border-radius:50%;box-sizing:border-box}
+.dq-pip.s-done{
+  background:radial-gradient(circle at 33% 27%,rgba(255,255,255,.36),rgba(255,255,255,0) 46%),var(--accent);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.28),0 1px 1px rgba(0,0,0,.35);
+}
+.dq-pip.s-miss{border:1.5px solid #a98a52;background:rgba(255,255,255,.2)}
+.dq-pip.s-pending{border:1.5px dashed var(--gilt)}
+.dq-pip.s-none{width:5px;height:5px;margin:4px;background:rgba(138,106,40,.35)}
+.dq-deed-streak{display:inline-flex;align-items:center;gap:2px;margin-inline-start:auto;font-weight:700;font-size:15px;color:var(--accent-ink)}
+.dq-deed-streak .ico{width:17px;height:17px;color:var(--rubric);--ia:#e8892f}
+.dq-deed-rate{min-width:42px;text-align:end;font-weight:700;font-size:15px;font-variant-numeric:lining-nums}
+.dq-deed-meta .dq-strip+.dq-deed-rate{margin-inline-start:auto}
+.dq-bar{ /* one task's bar: the same bubble bar as the big one, smaller */
+  box-sizing:border-box;height:13px;margin-top:8px;padding:2px;overflow:hidden;border-radius:99px;
+  background:linear-gradient(180deg,#24160b,#4a3018);border:1px solid var(--gilt);box-shadow:inset 0 1px 3px rgba(0,0,0,.7);
+}
+.dq-bar i{
+  position:relative;display:block;height:100%;min-width:7px;border-radius:99px;background:var(--accent);
+  background:linear-gradient(180deg,color-mix(in srgb,#fff 45%,var(--accent)) 0%,color-mix(in srgb,#fff 12%,var(--accent)) 34%,var(--accent) 62%,color-mix(in srgb,#000 24%,var(--accent)) 100%);
+  box-shadow:0 0 0 .5px color-mix(in srgb,#000 55%,var(--accent));transition:width 1s cubic-bezier(.22,.7,.2,1);
+}
+.dq-bar i::before{content:"";position:absolute;pointer-events:none;border-radius:99px;background:rgba(255,255,255,.3);left:2px;right:2px;top:1px;height:3px}
+.dq-bar i[style*="width:0%"]{display:none}
+.dq-foot{margin-top:4px;justify-content:space-between;gap:10px}
+.dq-foot .btn{flex:1 1 auto}
+
+/* ══════════ small screens and special cases ══════════ */
+@media (max-width:360px){
+  .folio .folio-month{font-size:27px}
+  .ds-tab{font-size:13px}
+  .dq-stat b{font-size:21px}
+}
+@media (max-width:340px){
+  .ds-tab{font-size:11px;padding-inline:1px}
+}
+@media (prefers-reduced-motion:reduce){
+  .folio-leaf.turn-next,.folio-leaf.turn-prev,.ds-pane.active{animation:none}
+}
+
+/* ══════════ 1.5.0: the 1% bar on Profile, the Check-in page ══════════ */
+.streak-hint{margin-top:9px;font-style:italic;font-size:13px;line-height:1.35;color:var(--ink-soft)}
+.streak-hint:empty{display:none}
+.checkin-inner{max-width:980px}
+.checkin-inner > .card{margin-left:0;margin-right:0}
+
+/* ══════════ 1.5.0: Daily To-Do days (every day, chosen weekdays, a rhythm) and reminder times ══════════ */
+.dt-item .todo-txt{display:flex;flex-direction:column;gap:3px}
+.dt-name{overflow-wrap:anywhere}
+.dt-meta{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:12.5px;font-style:italic;line-height:1.25;color:var(--ink-soft)}
+.dt-item.done .todo-txt{text-decoration:none}
+.dt-item.done .dt-name{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(108,80,24,.55)}
+.dt-item.done .dt-meta{opacity:.8}
+.dt-tag{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.dt-tag .ico{width:14px;height:14px;flex:none}
+.dt-tag.dt-next{font-weight:700;font-style:normal;color:var(--accent-ink)}
+.dt-edit{flex:none;display:flex;align-items:center;justify-content:center;width:36px;height:36px;margin:-7px -3px -7px 0;border-radius:8px;cursor:pointer;color:var(--ink-soft);-webkit-tap-highlight-color:transparent}
+.dt-edit .ico{width:21px;height:21px}
+.dt-edit:hover{color:var(--accent-ink)}
+.dt-edit:active{transform:scale(.92)}
+.dt-item.resting{opacity:.74}
+.dt-item.resting .todo-check{border-style:dashed}
+.dt-rest-head{display:flex;align-items:center;gap:7px;margin:16px 2px 9px;font-style:italic;font-size:14.5px;color:var(--ink-soft)}
+.dt-rest-head .ico{width:17px;height:17px;flex:none}
+.dt-rest-head small{margin-inline-start:auto;font-size:13px}
+.dt-allrest{margin-bottom:4px}
+
+/* the page of one task */
+.dt-mode{margin-bottom:10px;flex-wrap:nowrap}
+.dt-mode .chip{flex:1 1 0;min-width:0;padding-inline:6px;text-align:center;white-space:nowrap;font-size:13.5px}
+.dt-lede{margin:0 0 12px;font-style:italic;font-size:15px;line-height:1.4;color:var(--ink-soft)}
+.dt-weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:4px 0 12px}
+.dt-wd,.dt-cd{
+  font-family:var(--font-body);cursor:pointer;color:var(--ink-soft);-webkit-tap-highlight-color:transparent;
+  background:rgba(255,255,255,.28);border:1.5px dashed #a98a52;transition:transform .08s;
+}
+.dt-wd{padding:12px 0;text-align:center;font-weight:700;font-size:14px;border-radius:8px}
+.dt-wd:active,.dt-cd:active{transform:scale(.94)}
+.dt-wd.on,.dt-cd.on{
+  color:var(--on-accent,#fbeec8);text-shadow:0 1px 0 rgba(0,0,0,.5);border:1.5px solid #5a4010;
+  background:radial-gradient(circle at 33% 25%,rgba(255,255,255,.3),rgba(255,255,255,0) 52%),var(--accent);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14),0 2px 0 #3a2a0a,0 3px 5px rgba(0,0,0,.28);
+}
+.dt-presets{margin:0 0 6px}
+.dt-stepper{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}
+.dt-stepper .f-label{margin:0}
+.dt-stepper-ctl{display:inline-flex;align-items:center;gap:10px}
+.dt-step{min-width:44px;font-size:20px;line-height:1}
+.dt-len{min-width:2ch;text-align:center;font-family:var(--font-display);font-weight:400;font-size:28px;line-height:1;color:var(--accent-ink);font-variant-numeric:lining-nums}
+.dt-cycle-days{display:grid;grid-template-columns:repeat(var(--dt-cols,6),minmax(0,1fr));gap:7px;margin:4px 0 10px}
+.dt-cd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 2px 6px;border-radius:9px}
+.dt-cd span{font-size:18px;font-weight:700;line-height:1.1;font-variant-numeric:lining-nums}
+.dt-cd small{font-size:11px;font-style:italic;line-height:1.1;opacity:.9}
+.dt-legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0 0 12px;font-style:italic;font-size:13px;color:var(--ink-soft)}
+.dt-leg{display:inline-flex;align-items:center;gap:6px}
+.dt-dot{display:inline-block;width:14px;height:14px;border-radius:50%;box-sizing:border-box}
+.dt-dot.on{background:var(--accent);box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.22)}
+.dt-dot.rest{border:1.5px dashed #a98a52}
+.dt-legnote{flex:1 1 auto;text-align:end;color:var(--ink-faint)}
+.dt-start{margin:4px 0 0}
+.dt-preview-wrap{margin-top:14px;padding-top:12px;border-top:1px dotted rgba(138,106,40,.55)}
+.dt-preview-title{margin-bottom:8px;font-style:italic;font-size:13.5px;color:var(--ink-soft)}
+.dt-preview{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.dt-pv{display:flex;flex-direction:column;align-items:center;padding:4px 0 5px;border-radius:7px;color:var(--ink-faint);border:1.5px dashed #a98a52}
+.dt-pv small{font-size:10.5px;font-style:italic;line-height:1.1}
+.dt-pv b{font-size:15px;line-height:1.15;font-variant-numeric:lining-nums}
+.dt-pv.on{color:var(--on-accent,#fbeec8);border:1.5px solid #5a4010;background:var(--accent)}
+.dt-pv.today{outline:2px solid var(--gilt);outline-offset:1px}
+.dt-warn{
+  display:none;margin-top:12px;padding:8px 11px;font-size:14px;line-height:1.35;color:var(--ink);
+  background:linear-gradient(0deg,rgba(160,47,24,.10),rgba(160,47,24,.10)),var(--vellum-hi);border:1px solid var(--rubric);border-radius:3px;
+}
+.dt-warn.on{display:block}
+.dt-times{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.dt-time{
+  display:inline-flex;align-items:center;gap:7px;padding:4px 5px 4px 12px;font-size:17px;color:var(--ink);
+  background:var(--vellum-hi);border:1.5px solid #8a6a28;border-radius:999px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.5),0 1px 0 rgba(90,60,15,.35);
+}
+.dt-time .ico{width:16px;height:16px;flex:none}
+.dt-time b{font-variant-numeric:lining-nums}
+.dt-time-x{display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;background:none;border-radius:50%;cursor:pointer;color:var(--ink-soft);font-size:14px}
+.dt-time-x:active{transform:scale(.9)}
+.dt-no-times{font-style:italic;font-size:14.5px;color:var(--ink-faint)}
+.dt-time-add{align-items:stretch}
+.dt-time-add input{flex:1;min-width:0}
+.dt-time-add input[type=time]{padding:9px 11px;min-height:46px;font-size:16px}
+.dt-time-add input.invalid{border-color:var(--red);box-shadow:0 0 0 2px rgba(155,28,28,.28)}
+.dt-web-note{text-align:left;margin-top:8px}
+.dt-foot{margin-top:4px;flex-direction:column}
+.dt-foot .btn{width:100%}
+
+/* a day off in the tracker: neither done nor missed */
+.dq-cell.s-rest,.dq-dot.s-rest{border:1.5px solid rgba(138,106,40,.5);background:rgba(138,106,40,.16);color:var(--ink-soft);font-weight:400}
+.dq-pip.s-rest{background:rgba(138,106,40,.34)}
+.dq-day-list li.rest .dq-day-name{font-style:italic;color:var(--ink-soft)}
+.dq-day-list li.rest .dq-day-mark .ico{width:15px;height:15px;color:var(--ink-faint)}
+.dq-sched{display:inline-block;margin-inline-start:6px;font-size:12.5px;font-weight:400;font-style:italic;color:var(--ink-faint)}
+
+/* ══════════ 1.5.2: the Daily To-Do is the whole To-Do tab ══════════ */
+/* "Every day / Just once" under the add row: the same two chips as on the page of a task, a little apart from the list */
+.dt-kind{margin:0 0 14px}
+/* the page of a task has four choices now (every day, certain days, a rhythm, just once): two by two, so none is squeezed */
+.dt-mode4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dt-mode4 .chip{min-height:44px}
+/* the "Just once" group of the list opens right under the tasks of the day, with the same small heading as "Resting today" */
+.dt-once-head:first-child{margin-top:4px}
+
+/* ══════════ 1.7.0: how important a task is - Must do (red), Should do (amber), Could do (lapis blue) ══════════ */
+/* Blue and not green for "could": a ticked task is green in this app, and red-green is the pair most eyes confuse. The word is
+   always written next to the colour, so the colour is never the only sign. --pri is the colour, --pri-ink the same as text on
+   vellum, --pri-on the text on top of it. */
+:root{
+  --pri-must:#b3261e; --pri-should:#d79a14; --pri-could:#2f6fae;
+  --pri-must-ink:#8f1f16; --pri-should-ink:#6b4300; --pri-could-ink:#1f568c;
+}
+.pri-must{--pri:var(--pri-must);--pri-ink:var(--pri-must-ink);--pri-on:#fff8e6}
+.pri-should{--pri:var(--pri-should);--pri-ink:var(--pri-should-ink);--pri-on:#2b1b00}
+.pri-could{--pri:var(--pri-could);--pri-ink:var(--pri-could-ink);--pri-on:#fff8e6}
+
+/* in the list: a coloured ring on the tick box, and the word with a dot in the small print under the name */
+.dt-pri-tag{font-style:normal;font-weight:700;color:var(--pri-ink)}
+.dt-pri-dot{display:inline-block;flex:none;width:9px;height:9px;border-radius:50%;background:var(--pri);box-shadow:inset 0 0 0 1px rgba(0,0,0,.28)}
+.dt-item.pri-must:not(.done) .todo-check,
+.dt-item.pri-should:not(.done) .todo-check,
+.dt-item.pri-could:not(.done) .todo-check{border-color:var(--pri)}
+
+/* on the page of a task: three blocks in a row (the colour band on top says which is which) and "No priority" under them */
+.dt-pri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:2px 0 12px}
+.dt-pri-btn{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:72px;padding:14px 3px 9px;
+  font-family:var(--font-body);text-align:center;cursor:pointer;color:var(--ink);-webkit-tap-highlight-color:transparent;
+  background:rgba(255,255,255,.28);border:1.5px solid var(--pri);border-radius:9px;transition:transform .08s;
+}
+.dt-pri-btn::before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:var(--pri)}
+.dt-pri-btn b{font-size:15.5px;line-height:1.15;overflow-wrap:anywhere}
+.dt-pri-btn small{font-size:12px;font-style:italic;line-height:1.15;color:var(--ink-soft)}
+.dt-pri-btn:active,.dt-pri-none:active{transform:scale(.96)}
+.dt-pri-btn.on{
+  color:var(--pri-on);text-shadow:none;border-color:var(--pri);
+  background:radial-gradient(circle at 33% 25%,rgba(255,255,255,.28),rgba(255,255,255,0) 55%),var(--pri);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 2px 0 rgba(40,25,5,.55),0 3px 5px rgba(0,0,0,.28);
+}
+.dt-pri-btn.on small{color:var(--pri-on);opacity:.92}
+.dt-pri-btn.on::before{background:rgba(255,255,255,.4)}
+.dt-pri-none{
+  grid-column:1 / -1;min-height:40px;padding:8px 10px;font-family:var(--font-body);font-size:14.5px;cursor:pointer;color:var(--ink-soft);
+  -webkit-tap-highlight-color:transparent;background:none;border:1.5px dashed #a98a52;border-radius:9px;transition:transform .08s;
+}
+.dt-pri-none.on{color:var(--ink);font-weight:700;border-style:solid;background:rgba(255,255,255,.42)}
+.dt-pri-lede{margin-bottom:0}
+
+/* ══════════ 1.7.0: Settings > Reminder check (Android app): does a reminder reach a closed app, and what became of the last ones ══════════ */
+/* The colour is always written next to its meaning (the row says what is wrong in words), so it is never the only sign. --rh-c is the
+   colour of one row, set by the state class on it. */
+:root{ --rh-ok:#3d7a35; --rh-warn:#c47f0a; --rh-bad:#b3261e; --rh-info:#2f6fae; }
+.rh-card[hidden]{display:none}
+.rh-ok,.rh-s-good{--rh-c:var(--rh-ok)}
+.rh-warn,.rh-s-check,.rh-s-late{--rh-c:var(--rh-warn)}
+.rh-bad,.rh-s-blocked{--rh-c:var(--rh-bad)}
+.rh-info{--rh-c:var(--rh-info)}
+.rh-summary{margin:0 0 8px;padding:10px 12px;font-size:14.5px;line-height:1.4;color:var(--ink);
+  background:var(--vellum-hi);border:1px solid rgba(80,55,20,.3);border-left:6px solid var(--rh-c);border-radius:3px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.rh-row,.rh-log-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px dashed rgba(120,90,40,.4)}
+.rh-row:last-child,.rh-log-row:last-child{border-bottom:0}
+.rh-dot{flex:none;width:12px;height:12px;margin-top:5px;border-radius:50%;background:var(--rh-c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.28)}
+.rh-txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.rh-txt b{font-size:15px;line-height:1.25}
+.rh-txt span{font-size:13.5px;line-height:1.35;color:var(--ink-soft);overflow-wrap:anywhere}
+.rh-fix{flex:none;align-self:center}
+.rh-opt-row{margin:0 0 12px}
+.rh-msg{margin-top:8px;font-size:13.5px;line-height:1.4;font-style:italic;color:var(--ink-soft)}
+.rh-msg:empty{display:none}
+.rh-tip{margin-top:2px}
+.rem-health-link{display:inline-block;margin:0 0 8px;padding:6px 0;font-family:var(--font-body);font-size:14px;text-align:start;
+  text-decoration:underline;color:var(--accent-ink);background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rem-health-link[hidden]{display:none}
