@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">
+  <defs>
+    <radialGradient id="gold" cx=".34" cy=".3" r=".85">
+      <stop offset="0" stop-color="#fff3bd"/><stop offset=".4" stop-color="#e0bb57"/><stop offset="1" stop-color="#85641f"/>
+    </radialGradient>
+    <radialGradient id="iron" cx=".35" cy=".3" r=".8">
+      <stop offset="0" stop-color="#9a9aa2"/><stop offset=".55" stop-color="#4a4a52"/><stop offset="1" stop-color="#1e1e22"/>
+    </radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a3a20"/><stop offset=".5" stop-color="#3a2412"/><stop offset="1" stop-color="#26160a"/>
+    </linearGradient>
+  </defs>
+  <!-- carved wooden band -->
+  <rect x="3.6" y="3.6" width="64.8" height="64.8" fill="none" stroke="url(#wood)" stroke-width="7.2"/>
+  <rect x=".9" y=".9" width="70.2" height="70.2" fill="none" stroke="#1a0f06" stroke-width="1.2"/>
+  <rect x="2.6" y="2.6" width="66.8" height="66.8" fill="none" stroke="#7b5230" stroke-width=".7" opacity=".8"/>
+  <!-- gilded bead -->
+  <rect x="8.6" y="8.6" width="54.8" height="54.8" fill="none" stroke="#b78f32" stroke-width="3.2"/>
+  <rect x="8" y="8" width="56" height="56" fill="none" stroke="#f0d98a" stroke-width=".7" opacity=".9"/>
+  <rect x="10.8" y="10.8" width="50.4" height="50.4" fill="none" stroke="#5e4416" stroke-width=".8"/>
+  <!-- inner shadow line -->
+  <rect x="12.2" y="12.2" width="47.6" height="47.6" fill="none" stroke="#000" stroke-width="1" opacity=".18"/>
+  <!-- corner bosses -->
+  <g id="boss">
+    <circle cx="13" cy="13" r="11.4" fill="url(#gold)" stroke="#5e4416" stroke-width="1"/>
+    <circle cx="13" cy="13" r="8" fill="none" stroke="#6e5019" stroke-width=".8"/>
+    <g stroke="#6e5019" stroke-width="1.1" stroke-linecap="round">
+      <path d="M13 5.6v2.6M13 17.8v2.6M5.6 13h2.6M17.8 13h2.6"/>
+      <path d="M7.9 7.9l1.8 1.8M16.3 16.3l1.8 1.8M7.9 18.1l1.8-1.8M16.3 9.7l1.8-1.8"/>
+    </g>
+    <circle cx="13" cy="13" r="3.4" fill="url(#iron)" stroke="#111" stroke-width=".7"/>
+    <circle cx="12" cy="12" r="1" fill="#d8d8de" opacity=".85"/>
+  </g>
+  <use href="#boss" x="46"/>
+  <use href="#boss" y="46"/>
+  <use href="#boss" x="46" y="46"/>
+</svg>

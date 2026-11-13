@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <radialGradient id="gold" cx=".34" cy=".3" r=".85">
+      <stop offset="0" stop-color="#fff3bd"/><stop offset=".42" stop-color="#dcb653"/><stop offset="1" stop-color="#8a6a22"/>
+    </radialGradient>
+  </defs>
+  <!-- double rule: gilt outside, ink inside -->
+  <rect x="2.5" y="2.5" width="43" height="43" fill="none" stroke="#a3802c" stroke-width="1.8"/>
+  <rect x="6.4" y="6.4" width="35.2" height="35.2" fill="none" stroke="#5a4120" stroke-width=".9" opacity=".9"/>
+  <!-- corner rosettes -->
+  <g id="rosette">
+    <circle cx="8" cy="8" r="6.4" fill="url(#gold)" stroke="#6c5018" stroke-width=".9"/>
+    <circle cx="8" cy="8" r="3.9" fill="none" stroke="#7a5a1b" stroke-width=".7"/>
+    <circle cx="8" cy="3.6" r=".9" fill="#6c5018"/><circle cx="12.4" cy="8" r=".9" fill="#6c5018"/>
+    <circle cx="8" cy="12.4" r=".9" fill="#6c5018"/><circle cx="3.6" cy="8" r=".9" fill="#6c5018"/>
+    <circle cx="8" cy="8" r="1.5" fill="#4a3412"/>
+  </g>
+  <use href="#rosette" x="32"/>
+  <use href="#rosette" y="32"/>
+  <use href="#rosette" x="32" y="32"/>
+</svg>
